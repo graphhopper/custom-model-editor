@@ -27,7 +27,10 @@ class CustomModelEditor {
             lineNumbers: false,
             matchBrackets: true,
             autoCloseBrackets: true,
-            mode: "application/json",
+            mode: {
+                name: "javascript",
+                json: true,
+            },
             extraKeys: {
                 'Ctrl-Space': this.showAutoCompleteSuggestions,
                 'Alt-Enter': this.showAutoCompleteSuggestions
