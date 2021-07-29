@@ -22,6 +22,8 @@ class CustomModelEditor {
      */
     constructor(categories, callback) {
         this._categories = categories;
+        if (Object.keys(categories).length === 0)
+            console.warn('Empty list of categories provided to Custom Model Editor');
 
         this.cm = CodeMirror(callback, {
             lineNumbers: false,

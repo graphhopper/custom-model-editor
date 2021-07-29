@@ -14,8 +14,13 @@ const allowedLefts = Object.keys(categories).concat(areas.map(a => 'in_' + a)).c
 describe("parse", () => {
 
     test("empty categories", () => {
-        expect(parseTokens('a == a1', {a: {type: 'enum', values: []}}).error)
+        expect(parseTokens('a == a1', {a: {type: 'enum', values: []}}, []).error)
             .toBe(`no values given for enum category a`);
+    });
+
+    test("no categories", () => {
+        expect(parseTokens('a == a1', {}, []).error)
+            .toBe(`unexpected token 'a'`)
     });
 
     test("parse single comparison, valid", () => {

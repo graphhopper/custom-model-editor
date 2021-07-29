@@ -70,8 +70,6 @@ function parse(expression, categories, areas) {
  *
  */
 function parseTokens(tokens, categories, areas) {
-    if (Object.keys(categories).length < 1)
-        return error(`no categories given`);
     for (let [k, v] of Object.entries(categories)) {
         if (v.type === 'enum') {
             if (v.values.length < 1)
@@ -135,7 +133,7 @@ function parseEnumComparison() {
     return parseTripleComparison(
         comparisonOperators,
         (category, operator, value) => isCategoryValue(category, value),
-        (category, operator, value) => _categories[category].values
+        (category, operator, value) => typeof _categories[category] !== "undefined" ? _categories[category].values : []
     );
 }
 
