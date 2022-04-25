@@ -182,7 +182,7 @@ describe('validate_json', () => {
         expect(res.conditionRanges).toStrictEqual([[18, 25], [56, 63], [116, 123]]);
     });
 
-    test('speed/priority operator values must be numbers', () => {
+    test('speed/priority operator values must be numbers or value expression', () => {
         test_validate(`{"speed": [{"if": "condition", "multiply_by": []}]}`, [
             `speed[0][multiply_by]: must be a number. given type: array, range: [46, 48]`
         ]);

@@ -1,5 +1,5 @@
 /** Symbols used for the tokenization */
-const singleCharSymbols = ['(', ')', '<', '>'];
+const singleCharSymbols = ['(', ')', '<', '>', '+', '-', '*', '/'];
 const doubleCharSymbols = ['||', '&&', '==', '!=', '<=', '>='];
 
 /**
@@ -59,7 +59,7 @@ function tokenize(expression) {
             }
         }
         // we recursively extract one symbol or character at a time and repeat the same function for 
-        // the remaining expression.. we keep track of how many characters we found since the last symbol
+        // the remaining expression. we keep track of how many characters we found since the last symbol
         // or whitespace ('buffer')
         if (isDoubleCharSymbol(expression, pos)) {
             push(pos - buffer, pos);

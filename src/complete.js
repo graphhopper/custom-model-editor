@@ -1,4 +1,4 @@
-import {parse} from './parse.js';
+import {parseCondition} from './parse.js';
 import {tokenAtPos} from "./tokenize.js";
 
 /**
@@ -15,10 +15,10 @@ function complete(expression, pos, categories, areas) {
         while (parseExpression.length < pos)
             parseExpression += ' ';
         parseExpression = parseExpression.slice(0, pos);
-        // we use a little trick: we run parse() on a manipulated expression where we inserted a dummy character to
+        // we use a little trick: we run parseCondition() on a manipulated expression where we inserted a dummy character to
         // see which completions are offered to us (assuming we typed in something)
         parseExpression += '…';
-        const parseResult = parse(parseExpression, categories, areas);
+        const parseResult = parseCondition(parseExpression, categories, areas);
         const tokenPos = tokenAtPos(parseExpression, pos);
 
         // in case the expression has an error at a position that is parsed before our position we return no suggestions
@@ -43,7 +43,7 @@ function complete(expression, pos, categories, areas) {
         // special cases (and this is actually similar to the situation where we are at the end of the expression).
         // this is quite messy, but relying on the tests for now...
         const modifiedTokenPos = tokenAtPos(parseExpression, tokenPos.range[0]);
-        const parseResult = parse(parseExpression, categories, areas);
+        const parseResult = parseCondition(parseExpression, categories, areas);
         if (parseResult.range[0] !== modifiedTokenPos.range[0])
             return empty();
         const suggestions = parseResult.completions.filter(c => {

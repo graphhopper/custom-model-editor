@@ -3,6 +3,7 @@ import {tokenize} from './tokenize.js';
 const comparisonOperators = ['==', '!='];
 const numericComparisonOperators = ['<', '<=', '>', '>=', '==', '!='];
 const logicOperators = ['||', '&&'];
+const numericOperators = ['+', '-', '*', '/'];
 
 let _categories;
 let _areas;
@@ -16,9 +17,29 @@ let _idx;
  *          if there are no invalid tokens, but rather something is missing the range will be
  *          [expression.length, expression.length]
  */
-function parse(expression, categories, areas) {
+function parseCondition(expression, categories, areas) {
     const tokens = tokenize(expression);
-    const result = parseTokens(tokens.tokens, categories, areas);
+    const result = parseConditionTokens(tokens.tokens, categories, areas);
+
+    // translate token ranges to character ranges
+    if (result.error !== null) {
+        const tokenRanges = tokens.ranges;
+        const errorStartToken = result.range[0];
+        const errorEndToken = result.range[1];
+        const start = errorStartToken === tokenRanges.length
+            ? expression.length
+            : tokenRanges[errorStartToken][0];
+        const end = errorEndToken === tokenRanges.length
+            ? expression.length
+            : tokenRanges[errorEndToken - 1][tokenRanges[errorEndToken - 1].length - 1];
+        result.range = [start, end];
+    }
+    return result;
+}
+
+function parseValue(expression, categories, areas) {
+    const tokens = tokenize(expression);
+    const result = parseValueTokens(tokens.tokens, categories, areas);
 
     // translate token ranges to character ranges
     if (result.error !== null) {
@@ -67,9 +88,16 @@ function parse(expression, categories, areas) {
  *                appropriate completion the completion might be prefixed with '__hint__'.
  *
  * An alternative to the implementation here could be using a parser library like pegjs, nearly or tree-sitter?
- *
  */
-function parseTokens(tokens, categories, areas) {
+function parseConditionTokens(tokens, categories, areas) {
+    return parseTokens(tokens, categories, areas, parseConditionExpression);
+}
+
+function parseValueTokens(tokens, categories, areas) {
+    return parseTokens(tokens, categories, areas, parseValueExpression);
+}
+
+function parseTokens(tokens, categories, areas, parse) {
     for (let [k, v] of Object.entries(categories)) {
         if (v.type === 'enum') {
             if (v.values.length < 1)
@@ -83,13 +111,13 @@ function parseTokens(tokens, categories, areas) {
     _tokens = tokens;
     _idx = 0;
 
-    const result = parseExpression();
+    const result = parse();
     if (result.error !== null) return result;
     if (finished()) return valid();
     return error(`unexpected token '${_tokens[_idx]}'`, [_idx, _idx + 1], logicOperators);
 }
 
-function parseExpression() {
+function parseConditionExpression() {
     // rule: expression -> comparison
     const result = parseComparison();
     if (result.error !== null) return result;
@@ -125,6 +153,34 @@ function parseComparison() {
         return parseInvalidAreaOperator();
     } else {
         return error(`unexpected token '${_tokens[_idx]}'`, [_idx, _idx + 1], Object.keys(_categories).concat(_areas.map(a => 'in_' + a)).concat(['true', 'false']));
+    }
+}
+
+function parseValueExpression() {
+    // rule: expression -> value
+    const result = parseSingleValue();
+    if (result.error !== null) return result;
+    if (finished()) return valid();
+
+    // rule: expression -> value (numericOperator value)*
+    while (isNumericOperator()) {
+        nextToken();
+        if (finished())
+            return error(`unexpected token '${_tokens[_idx - 1]}'`, [_idx - 1, _idx], []);
+        const result = parseSingleValue();
+        if (result.error !== null) return result;
+    }
+    return valid();
+}
+
+function parseSingleValue() {
+    if (isNumericCategory() || isNumber(_tokens[_idx])) {
+        nextToken();
+        return valid();
+    } else if (finished()) {
+        return error(`empty value expression`, [_idx, _idx], []);
+    } else {
+        return error(`unexpected token '${_tokens[_idx]}'`, [_idx, _idx + 1], []);
     }
 }
 
@@ -229,7 +285,7 @@ function parseComparisonInParentheses() {
     if (finished())
         return error(`unmatched opening '('`, [from, _idx], []);
     nextToken();
-    const result = parseExpression();
+    const result = parseConditionExpression();
     if (result.error !== null) return result;
     if (!isClosing()) return error(`unmatched opening '('`, [from, _idx], []);
     nextToken();
@@ -250,6 +306,14 @@ function isLogicOperator() {
 
 function tokensIsLogicOperator(tokens) {
     return logicOperators.indexOf(tokens) >= 0;
+}
+
+function isNumericOperator() {
+    return tokensIsNumericOperator(_tokens[_idx]);
+}
+
+function tokensIsNumericOperator(tokens) {
+    return numericOperators.indexOf(tokens) >= 0;
 }
 
 function isEnumCategory() {
@@ -311,4 +375,4 @@ function valid() {
     return {error: null, range: [], completions: []};
 }
 
-export {parse, parseTokens};
+export {parseCondition, parseConditionTokens, parseValue, parseValueTokens};

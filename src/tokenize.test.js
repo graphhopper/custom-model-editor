@@ -22,6 +22,9 @@ describe("tokenize", () => {
         test_tokenize('ab   xy \n \t zz', ['ab', 'xy', 'zz'], [[0, 2], [5, 7], [12, 14]]);
         test_tokenize('   abc   def\t\n\n', ['abc', 'def'], [[3, 6], [9, 12]]);
         test_tokenize('ab( c)(  (a ) ', ['ab', '(', 'c', ')', '(', '(', 'a', ')'], [[0, 2], [2, 3], [4, 5], [5, 6], [6, 7], [9, 10], [10, 11], [12, 13]]);
+        test_tokenize('ab+c', ['ab', '+', 'c'], [[0, 2], [2, 3], [3, 4]]);
+        test_tokenize('ab / c', ['ab', '/', 'c'], [[0, 2], [3, 4], [5, 6]]);
+
     });
 
     test("get token at position", () => {
@@ -55,6 +58,7 @@ describe("tokenize", () => {
         test_tokenAtPos('  abc== d &&(e != xy(z)', 18, 'xy', [18, 20]);
         test_tokenAtPos('  abc==\n\n\tdef\n&&', 7, null, [7, 10]);
         test_tokenAtPos('  abc==\n\n\tdef\n&&', 12, 'def', [10, 13]);
+        test_tokenAtPos(' abc   * d - 3', 7, '*', [7, 8]);
     });
 
     function test_tokenAtPos(expression, pos, token, range) {
