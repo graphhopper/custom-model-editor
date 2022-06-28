@@ -41,7 +41,14 @@ export function completeJson(content, pos) {
             range: jsonPath.signature[jsonPath.signature.length - 1] === 'key' ? jsonPath.tokenRange : [pos, pos + 1]
         }
     } else if (
-        /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object-property\[(if|else_if|else)]-value$/.test(signatureString)
+        /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object-property\[(else)]-value$/.test(signatureString)
+    ) {
+        return {
+            suggestions: ['""'],
+            range: [pos, pos + 2]
+        }
+    } else if (
+        /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object-property\[(if|else_if)]-value$/.test(signatureString)
     ) {
         return {
             suggestions: ['__hint__type a condition'],
@@ -51,7 +58,7 @@ export function completeJson(content, pos) {
         /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object-property\[(limit_to|multiply_by)]-value$/.test(signatureString)
     ) {
         return {
-            suggestions: ['__hint__type a number'],
+            suggestions: ['__hint__type a string'],
             range: jsonPath.tokenRange
         }
     } else if (

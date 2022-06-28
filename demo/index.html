@@ -35,7 +35,7 @@
     });
     editor.categories = categories;
     editor.setExtraKey('Ctrl-Enter', () => {editor.value = (editor.value + '\n You pressed Ctrl-Enter')});
-    editor.value = '{\n "hello": "world"\n}';
+    editor.value = '{\n  "speed": [\n    {\n      "if": "max_speed > 10",\n      "limit_to": "600"\n    }\n  ]\n}';
     editor.cm.focus();
     editor.cm.setCursor(editor.cm.lineCount())
     const button = document.querySelector("#send-button")

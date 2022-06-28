@@ -33,9 +33,10 @@ describe('complete_json', () => {
         test_complete(`{"speed": [ {"if":    }      `, 20, [`__hint__type a condition`], [18, 23]);
         test_complete(`{"speed": [ {"if": "x"`, 20, [`__hint__type a condition`], [19, 22]);
         test_complete(`{"speed":  [ {"if": "abc",   "limit_to": 30}, {"else_if": "my_condition"`, 60, [`__hint__type a condition`], [58, 72]);
+        test_complete(`{"speed": [{"else": `, 20, [`""`], [20, 22]);
         // operator values
-        test_complete(`{"speed": [{"if": "abc", "limit_to":    `, 38, [`__hint__type a number`], [36, 40]);
-        test_complete(`{"priority": [ {"if": "abc",   "multiply_by": "x"`, 47, [`__hint__type a number`], [46, 49]);
+        test_complete(`{"speed": [{"if": "abc", "limit_to":    `, 38, [`__hint__type a string`], [36, 40]);
+        test_complete(`{"priority": [ {"if": "abc",   "multiply_by": "x"`, 47, [`__hint__type a string`], [46, 49]);
     });
 
     test(`distance_influence`, () => {

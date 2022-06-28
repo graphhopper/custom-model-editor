@@ -109,58 +109,62 @@ describe('validate_json', () => {
         test_validate(`{"speed": \n[{"abc": "def"}]}`, [
             `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to']. given: 'abc', range: [13, 18]`
         ]);
-        test_validate(`{"speed": [{"multiply_by": 0.9, "ele": "bla"}]}`, [
-            `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to']. given: 'ele', range: [32, 37]`
+        test_validate(`{"speed": [{"multiply_by": "0.9", "ele": "bla"}]}`, [
+            `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to']. given: 'ele', range: [34, 39]`
         ]);
-        test_validate(`{"priority": [{"if": "condition", "else": null, "multiply_by": 0.3}]}`, [
-            `priority[0]: too many keys. maximum: 2. given: else,if,multiply_by, range: [14, 67]`
+        test_validate(`{"priority": [{"if": "condition", "else": null, "multiply_by": "0.3"}]}`, [
+            `priority[0]: too many keys. maximum: 2. given: else,if,multiply_by, range: [14, 69]`
         ]);
-        test_validate(`{"priority": [{"if": "condition", "limit_to": 100}, {"if": "condition", "else": null, "multiply_by": 0.3}]}`, [
-            `priority[1]: too many keys. maximum: 2. given: else,if,multiply_by, range: [52, 105]`
+        test_validate(`{"priority": [{"if": "condition", "limit_to": "100"}, {"if": "condition", "else": "", "multiply_by": "0.3"}]}`, [
+            `priority[1]: too many keys. maximum: 2. given: else,if,multiply_by, range: [54, 107]`
         ]);
-        test_validate(`{"priority": [{"limit_to": 100, "multiply_by": 0.3}]}`, [
-            `priority[0]: every statement must have a clause ['if', 'else_if', 'else']. given: limit_to,multiply_by, range: [14, 51]`
+        test_validate(`{"priority": [{"limit_to": "100", "multiply_by": "0.3"}]}`, [
+            `priority[0]: every statement must have a clause ['if', 'else_if', 'else']. given: limit_to,multiply_by, range: [14, 55]`
         ]);
         test_validate(`{"priority": [{"if": "condition1", "else_if": "condition2"}]}`, [
             `priority[0]: every statement must have an operator ['multiply_by', 'limit_to']. given: if,else_if, range: [14, 59]`
         ]);
-        test_validate(`{"priority": [{"if": "condition1", "limit_to": 100}, {"if": "condition2"}]}`, [
-            `priority[1]: every statement must have an operator ['multiply_by', 'limit_to']. given: if, range: [53, 73]`
+        test_validate(`{"priority": [{"if": "condition1", "limit_to": "100"}, {"if": "condition2"}]}`, [
+            `priority[1]: every statement must have an operator ['multiply_by', 'limit_to']. given: if, range: [55, 75]`
         ]);
-        test_validate(`{"speed": [ "if": "condition", "limit_to": 100 ]}`, [
+        test_validate(`{"speed": [ "if": "condition", "limit_to": "100" ]}`, [
             `speed[0]: must be an object. given type: string, range: [12, 16]`,
             `speed[1]: must be an object. given type: string, range: [31, 41]`,
         ]);
     });
 
     test('speed/priority statements conditions must be strings or booleans (or null or empty string for else)', () => {
-        test_validate(`{"speed": [{"if": , "limit_to": 30}]}`, [
+        test_validate(`{"speed": [{"if": , "limit_to": "30"}]}`, [
             `speed[0][if]: missing value, range: [12, 16]`
         ]);
         test_validate(`{"speed": [{"if": "condition", "limit_to": }]}`, [
             `speed[0][limit_to]: missing value, range: [31, 41]`
         ]);
-        test_validate(`{"speed": [{"if": "condition", "limit_to": 30}, {"else": "condition", "multiply_by": 0.4}]}`, [
-            `speed[1][else]: must be null or empty. given: 'condition', range: [57, 68]`
+        test_validate(`{"speed": [{"if": "condition", "limit_to": "30"}, {"else": "condition", "multiply_by": "0.4"}]}`, [
+            `speed[1][else]: must be an empty string. given: 'condition', range: [59, 70]`
         ]);
-        test_validate(`{"speed": [{"if": "condition", "limit_to": 30}, {"else": "   ", "multiply_by": 0.4}]}`, [
-            `speed[1][else]: must be null or empty. given: '   ', range: [57, 62]`
+        test_validate(`{"speed": [{"if": "condition", "limit_to": "30"}, {"else": "   ", "multiply_by": "0.4"}]}`, [
+            `speed[1][else]: must be an empty string. given: '   ', range: [59, 64]`
         ]);
-        test_validate(`{"speed": [{"if": "condition", "limit_to": 30}, {"else": null, "multiply_by": 0.4}]}`, [
+        test_validate(`{"speed": [{"if": "condition", "limit_to": "30"}, {"else": null, "multiply_by": "0.4"}]}`, [
+            `speed[1][else]: must be an empty string. given: 'null', range: [59, 63]`
         ]);
-        test_validate(`{"priority": [{"if" : [], "multiply_by": 0.4}]}`, [
-            `priority[0][if]: must be a string or boolean. given type: array, range: [22, 24]`
+        test_validate(`{"speed": [{"if": "condition", "limit_to": "30"}, {"else": "", "multiply_by": "0.4"}]}`, [
+        ]);
+        test_validate(`{"priority": [{"if" : [], "multiply_by": "0.4"}]}`, [
+            `priority[0][if]: must be a string. given type: array, range: [22, 24]`
         ])
-        test_validate(`{"priority": [{"if" : {}, "multiply_by": 0.4}]}`, [
-            `priority[0][if]: must be a string or boolean. given type: object, range: [22, 24]`
+        test_validate(`{"priority": [{"if" : {}, "multiply_by": "0.4"}]}`, [
+            `priority[0][if]: must be a string. given type: object, range: [22, 24]`
         ])
-        test_validate(`{"priority": [{"if" : 35, "multiply_by": 0.4}]}`, [
-            `priority[0][if]: must be a string or boolean. given type: number, range: [22, 24]`
+        test_validate(`{"priority": [{"if" : 35, "multiply_by": "0.4.}]}`, [
+            `priority[0][if]: must be a string. given type: number, range: [22, 24]`
         ])
-        test_validate(`{"speed": [{"if": "condition", "multiply_by": 0.2}, {"else_if": 3.4, "limit_to": 12}]}`, [
-            `speed[1][else_if]: must be a string or boolean. given type: number, range: [64, 67]`
+        test_validate(`{"speed": [{"if": "condition", "multiply_by": "0.2"}, {"else_if": 3.4, "limit_to": "12"}]}`, [
+            `speed[1][else_if]: must be a string. given type: number, range: [66, 69]`
         ]);
-        test_validate(`{"speed": [{"limit_to": 100, "if": true}`, [
+        test_validate(`{"speed": [{"limit_to": "100", "if": true}`, [
+            `speed[0][if]: must be a string. given type: boolean, range: [37, 41]`
         ]);
         test_validate(`{"speed": [ "if":`, [
             `speed[0]: must be an object. given type: string, range: [12, 16]`
@@ -168,41 +172,50 @@ describe('validate_json', () => {
         test_validate(`{"speed": [ "if": "if": `, [
             `speed[0]: must be an object. given type: string, range: [12, 16]`
         ]);
-        test_validate(`{"speed": [{"if": tru, "multiply_by": 0.15}]`, [
+        test_validate(`{"speed": [{"if": tru, "multiply_by": "0.15"}]`, [
             `speed[0][if]: missing value, range: [12, 16]`
         ]);
-        test_validate(`{"speed": [ {"if":  "abc", "limit_to": 100    }]`, [
+        test_validate(`{"speed": [ {"if":  "abc", "limit_to": "100"    }]`, [
         ]);
     });
 
     test('get condition ranges', () => {
-        const res = validateJson(`{"speed": [{"if": "cond1", "limit_to": 50}, {"else_if": "cond2", "multiply_by": 0.3}],
-         "priority": [{"if": "cond3", "multiply_by": 0.3}]}`);
+        const res = validateJson(`{"speed": [{"if": "cond1", "limit_to": "50"}, {"else_if": "cond2", "multiply_by": "0.3"}],
+         "priority": [{"if": "cond3", "multiply_by": "0.3"}]}`);
         expect(res.errors).toStrictEqual([]);
-        expect(res.conditionRanges).toStrictEqual([[18, 25], [56, 63], [116, 123]]);
+        expect(res.conditionRanges).toStrictEqual([[18, 25], [58, 65], [120, 127]]);
     });
 
-    test('speed/priority operator values must be numbers', () => {
+    test('speed/priority operator expressions must be strings', () => {
         test_validate(`{"speed": [{"if": "condition", "multiply_by": []}]}`, [
-            `speed[0][multiply_by]: must be a number. given type: array, range: [46, 48]`
+            `speed[0][multiply_by]: must be a string. given type: array, range: [46, 48]`
         ]);
         test_validate(`{"priority": [{"if": "condition", "multiply_by": {}}]}`, [
-            `priority[0][multiply_by]: must be a number. given type: object, range: [49, 51]`
+            `priority[0][multiply_by]: must be a string. given type: object, range: [49, 51]`
         ]);
-        test_validate(`{"speed": [{"if": "condition", "limit_to": "abc"}]}`, [
-            `speed[0][limit_to]: must be a number. given type: string, range: [43, 48]`
+        test_validate(`{"priority": [{"if": "condition", "multiply_by": 100}]}`, [
+            `priority[0][multiply_by]: must be a string. given type: number, range: [49, 52]`
         ]);
+        test_validate(`{"speed": [{"if": "condition", "limit_to": "abc"}]}`, []);
+        test_validate(`{"speed": [{"if": "condition", "limit_to": "100"}]}`, []);
     });
 
+    test('get operator expression ranges', () => {
+        const res = validateJson((`{"speed": [{"if": "cond1", "limit_to": "speed * 0.9"}, {"else_if": "cond2", "multiply_by": "0.3"}],
+          "priority": [{"if": "cond3", "multiply_by": "curvature + 75"}]}`));
+        expect(res.errors).toStrictEqual([]);
+        expect(res.operatorExpressionRanges).toStrictEqual([[39, 52],[91, 96],[154, 170]]);
+    })
+
     test('statements must follow certain order', () => {
-        test_validate(`{"speed": [{"else": "", "limit_to": 60}, {"if": "condition", "multiply_by": 0.9}]}`, [
-            `speed[0]: 'else' clause must be preceded by 'if' or 'else_if', range: [11, 39]`
+        test_validate(`{"speed": [{"else": "", "limit_to": "60"}, {"if": "condition", "multiply_by": "0.9"}]}`, [
+            `speed[0]: 'else' clause must be preceded by 'if' or 'else_if', range: [11, 41]`
         ]);
-        test_validate(`{"priority": [{"else_if": "condition", "multiply_by": 0.3}, {"else": "", "limit_to": 30}]}`, [
-            `priority[0]: 'else_if' clause must be preceded by 'if' or 'else_if', range: [14, 58]`
+        test_validate(`{"priority": [{"else_if": "condition", "multiply_by": "0.3"}, {"else": "", "limit_to": "30"}]}`, [
+            `priority[0]: 'else_if' clause must be preceded by 'if' or 'else_if', range: [14, 60]`
         ]);
         // multiple else_ifs are possible
-        test_validate(`{"priority": [{"if": "abc", "limit_to": 60}, {"else_if": "def", "multiply_by": 0.2}, {"else_if": "condition", "limit_to": 100}]}`, []);
+        test_validate(`{"priority": [{"if": "abc", "limit_to": "60"}, {"else_if": "def", "multiply_by": "0.2"}, {"else_if": "condition", "limit_to": "100"}]}`, []);
     });
 
     test('areas is an object', () => {

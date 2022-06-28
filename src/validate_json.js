@@ -6,6 +6,7 @@ const operators = ['multiply_by', 'limit_to'];
 const statementKeys = clauses.concat(operators);
 
 let _conditionRanges = [];
+let _operatorExpressionRanges = [];
 let _areas = [];
 
 /**
@@ -19,8 +20,8 @@ let _areas = [];
  * the speed/priority array objects must contain a cause that can be either 'if', 'else_if' or 'else' and
  * an operator that can be 'multiply_by' or 'limit_to'
  *
- * the clause value must be a string and the operator value must be a number
- * except when the the clause is 'else' in which case the value must be null
+ * the clause value, called the 'condition', must be a string except when the clause is 'else' in which case the value must be null
+ * the operator value, called the 'operator expression', must be either a number (legacy) or a string
  *
  * 'else_if' and 'else' clauses must be preceded by an 'if' or 'else_if' clause
  *
@@ -32,10 +33,13 @@ let _areas = [];
  *               to 'syntax'
  * - conditionRanges: a list of character ranges in above format that indicates the positions of
  *                    the 'conditions', i.e. the values of 'if' and 'else_if' clauses
+ * - operatorExpressionRanges: a list of character ranges in above format that indicates the position of the 'operator
+ *                     expressions', i.e. the values of the 'multiply_by' or 'limit_to' operators
  * - areas: the list of area names used in the document
  */
 export function validateJson(json) {
     _conditionRanges = [];
+    _operatorExpressionRanges = [];
     _areas = [];
 
     if (json.trim().length === 0)
@@ -43,10 +47,11 @@ export function validateJson(json) {
             errors: [error('root', 'must be an object', [0, json.length])],
             jsonErrors: [],
             conditionRanges: _conditionRanges,
+            operatorExpressionRanges: _operatorExpressionRanges,
             areas: _areas
         }
 
-    // we keep errors found by the json separate from the ones we find when we validate against our 'schema'
+    // we keep errors found by the json parser separate from the ones we find when we validate against our 'schema'
     const parserErrors = [];
     const parseRes = parseTree(json, parserErrors, {
         allowEmptyContent: false,
@@ -67,6 +72,7 @@ export function validateJson(json) {
         errors,
         jsonErrors,
         conditionRanges: _conditionRanges,
+        operatorExpressionRanges: _operatorExpressionRanges,
         areas: _areas
     }
 }
@@ -145,21 +151,22 @@ function validateStatementValue(path, key, value) {
     const isOperator = operators.indexOf(key.value) >= 0;
     if (isClause) {
         if (key.value === 'else') {
-            if (!(isJsonNull(value) || (isJsonString(value) && value.value === ''))) {
-                // todo: now we are using json can we just allow "" and reject null?
-                errors.push(error(`${path}[else]`, `must be null or empty. given: '${value.value}'`, getRange(value)));
+            if (!(isJsonString(value) && value.value === '')) {
+                errors.push(error(`${path}[else]`, `must be an empty string. given: '${value.value}'`, getRange(value)));
             }
         } else {
-            if (!isJsonString(value) && !isJsonBoolean(value)) {
-                errors.push(error(`${path}[${key.value}]`, `must be a string or boolean. given type: ${displayType(value)}`, getRange(value)));
+            if (!isJsonString(value)) {
+                errors.push(error(`${path}[${key.value}]`, `must be a string. given type: ${displayType(value)}`, getRange(value)));
             } else {
                 _conditionRanges.push(getRange(value));
             }
         }
     }
     if (isOperator) {
-        if (!isJsonNumber(value)) {
-            errors.push(error(`${path}[${key.value}]`, `must be a number. given type: ${displayType(value)}`, getRange(value)));
+        if (!isJsonString(value)) {
+            errors.push(error(`${path}[${key.value}]`, `must be a string. given type: ${displayType(value)}`, getRange(value)));
+        } else {
+            _operatorExpressionRanges.push(getRange(value));
         }
     }
     if (isClause === isOperator) {

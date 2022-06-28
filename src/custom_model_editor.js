@@ -110,10 +110,11 @@ class CustomModelEditor {
         });
 
         const areas = validateResult.areas;
-        const conditionRanges = validateResult.conditionRanges;
         const usedCategories = new Set();
+        const conditionRanges = validateResult.conditionRanges;
         conditionRanges.forEach((cr, i) => {
             const condition = text.substring(cr[0], cr[1]);
+            // this is a bit redundant, because we already make sure that the condition must be a string ("abc") in validateJson
             if (condition.length < 3 || condition[0] !== `"` || condition[condition.length - 1] !== `"`) {
                 errors.push({
                     message: `must be a non-empty string with double quotes, e.g. "true". given: ${condition}`,
