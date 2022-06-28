@@ -114,10 +114,6 @@ class CustomModelEditor {
         const usedCategories = new Set();
         conditionRanges.forEach((cr, i) => {
             const condition = text.substring(cr[0], cr[1]);
-            Object.keys(this._categories).forEach((c) => {
-                if (condition.indexOf(c) >= 0)
-                    usedCategories.add(c);
-            });
             if (condition.length < 3 || condition[0] !== `"` || condition[condition.length - 1] !== `"`) {
                 errors.push({
                     message: `must be a non-empty string with double quotes, e.g. "true". given: ${condition}`,
@@ -136,6 +132,7 @@ class CustomModelEditor {
                     to: editor.posFromIndex(cr[0] + parseRes.range[1] + 1)
                 });
             }
+            Object.keys(this._categories).filter(c => parseRes.tokens.includes(c)).forEach(c => usedCategories.add(c));
         });
 
         // if there are no errors we consider the jsonErrors next (but most of them should be fixed at this point),

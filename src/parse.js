@@ -19,6 +19,7 @@ let _idx;
 function parse(expression, categories, areas) {
     const tokens = tokenize(expression);
     const result = parseTokens(tokens.tokens, categories, areas);
+    result.tokens = tokens.tokens;
 
     // translate token ranges to character ranges
     if (result.error !== null) {

@@ -164,6 +164,11 @@ describe("parse", () => {
         test_parse('in_area1 == tru || a == a1', `invalid in_area1: 'tru'`, [12, 15], ['true', 'false']);
     });
 
+    test("parse, includes tokens", () => {
+        expect(parse('a==a1', categories, areas).tokens).toStrictEqual(['a', '==', 'a1'])
+        expect(parse('(a==a1', categories, areas).tokens).toStrictEqual(['(', 'a', '==', 'a1'])
+    })
+
     function test_parse_valid(expression) {
         const res = parse(expression, categories, areas);
         check(test_parse_valid, res, null, [], []);
