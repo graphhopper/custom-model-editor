@@ -1,4 +1,4 @@
-import {tokenizeCondition} from './tokenize.js';
+import {tokenizeCondition, tokenRange2characterRange} from './tokenize.js';
 
 const comparisonOperators = ['==', '!='];
 const numericComparisonOperators = ['<', '<=', '>', '>=', '==', '!='];
@@ -15,24 +15,14 @@ let _idx;
  * - range: the character range in which the (first) error occurred as list [startInclusive, endExclusive].
  *          if there are no invalid tokens, but rather something is missing the range will be
  *          [condition.length, condition.length]
+ * - tokens: the tokens that were found during the tokenization step
  */
 function parse(condition, categories, areas) {
     const tokens = tokenizeCondition(condition);
     const result = parseTokens(tokens.tokens, categories, areas);
     result.tokens = tokens.tokens;
-
-    // translate token ranges to character ranges
     if (result.error !== null) {
-        const tokenRanges = tokens.ranges;
-        const errorStartToken = result.range[0];
-        const errorEndToken = result.range[1];
-        const start = errorStartToken === tokenRanges.length
-            ? condition.length
-            : tokenRanges[errorStartToken][0];
-        const end = errorEndToken === tokenRanges.length
-            ? condition.length
-            : tokenRanges[errorEndToken - 1][tokenRanges[errorEndToken - 1].length - 1];
-        result.range = [start, end];
+        result.range = tokenRange2characterRange(condition, tokens.ranges, result.range[0], result.range[1]);
     }
     return result;
 }
@@ -249,8 +239,8 @@ function isLogicOperator() {
     return tokensIsLogicOperator(_tokens[_idx]);
 }
 
-function tokensIsLogicOperator(tokens) {
-    return logicOperators.indexOf(tokens) >= 0;
+function tokensIsLogicOperator(token) {
+    return logicOperators.indexOf(token) >= 0;
 }
 
 function isEnumCategory() {

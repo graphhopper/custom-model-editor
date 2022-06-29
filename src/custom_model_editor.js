@@ -7,6 +7,7 @@ import "codemirror/addon/lint/lint";
 import {validateJson} from "./validate_json";
 import {complete} from "./complete.js";
 import {parse as parseCondition} from "./parse_condition.js";
+import {parse as parseOperatorValue} from "./parse_operator_value.js";
 import {completeJson} from "./complete_json";
 
 
@@ -14,6 +15,7 @@ class CustomModelEditor {
     // The underlying code mirror object, use at your own risk. For bigger changes it is probably better to implement here
     cm;
     _categories = {};
+    _numericCategories = [];
     _validListener;
 
     /**
@@ -21,9 +23,7 @@ class CustomModelEditor {
      * as argument.
      */
     constructor(categories, callback) {
-        this._categories = categories;
-        if (Object.keys(categories).length === 0)
-            console.warn('Empty list of categories provided to Custom Model Editor');
+        this.categories = categories;
 
         this.cm = CodeMirror(callback, {
             lineNumbers: false,
@@ -56,6 +56,12 @@ class CustomModelEditor {
         this._categories = categories;
         if (Object.keys(categories).length === 0)
             console.warn('Empty list of categories provided to Custom Model Editor');
+        this._numericCategories = [];
+        Object.entries(this._categories).forEach(([k, v]) => {
+            if (v.type === 'numeric') {
+                this._numericCategories.push(k);
+            }
+        });
     }
 
     set value(value) {
@@ -124,7 +130,7 @@ class CustomModelEditor {
                 });
                 return;
             }
-            const parseRes = parseCondition(condition.substring(1, condition.length-1), this._categories, areas);
+            const parseRes = parseCondition(condition.substring(1, condition.length - 1), this._categories, areas);
             if (parseRes.error !== null) {
                 errors.push({
                     message: parseRes.error,
@@ -138,8 +144,27 @@ class CustomModelEditor {
 
         const operatorValueRanges = validateResult.operatorValueRanges;
         operatorValueRanges.forEach((oer, i) => {
-           const operatorValue = text.substring(oer[0], oer[1]);
-
+            const operatorValue = text.substring(oer[0], oer[1]);
+            // this is a bit redundant, because we already make sure that the operator value must be a string ("abc") in validateJson
+            if (operatorValue.length < 3 || operatorValue[0] !== `"` || operatorValue[operatorValue.length - 1] !== `"`) {
+                errors.push({
+                    message: `must be a non-empty string with double quotes, e.g. "100". given: ${operatorValue}`,
+                    severity: 'error',
+                    from: editor.posFromIndex(oer[0]),
+                    to: editor.posFromIndex(oer[1]),
+                });
+                return;
+            }
+            const parseRes = parseOperatorValue(operatorValue.substring(1, operatorValue.length - 1), this._numericCategories);
+            if (parseRes.error !== null) {
+                errors.push({
+                    message: parseRes.error,
+                    severity: 'error',
+                    from: editor.posFromIndex(oer[0] + parseRes.range[0] + 1),
+                    to: editor.posFromIndex(oer[0] + parseRes.range[1] + 1)
+                });
+            }
+            this._numericCategories.filter(c => parseRes.tokens.includes(c)).forEach(c => usedCategories.add(c));
         });
 
         // if there are no errors we consider the jsonErrors next (but most of them should be fixed at this point),
@@ -173,7 +198,7 @@ class CustomModelEditor {
                 let start = completeRes.range[0];
                 let stop = completeRes.range[1];
                 if (this.cm.getValue()[start] === `"`) start++;
-                if (this.cm.getValue()[stop-1] === `"`) stop--;
+                if (this.cm.getValue()[stop - 1] === `"`) stop--;
                 const condition = this.cm.getValue().substring(start, stop);
                 const completeConditionRes = complete(condition, cursor - start, this._categories, validateResult.areas);
                 if (completeConditionRes.suggestions.length > 0) {

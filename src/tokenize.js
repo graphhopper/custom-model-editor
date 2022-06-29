@@ -76,7 +76,7 @@ function tokenize(expression, singleCharSymbols, doubleCharSymbols) {
             }
         }
         // we recursively extract one symbol or character at a time and repeat the same function for 
-        // the remaining expression.. we keep track of how many characters we found since the last symbol
+        // the remaining expression. we keep track of how many characters we found since the last symbol
         // or whitespace ('buffer')
         if (isDoubleCharSymbol(expression, pos, doubleCharSymbols)) {
             push(pos - buffer, pos);
@@ -106,6 +106,16 @@ function tokenize(expression, singleCharSymbols, doubleCharSymbols) {
     return tokenizeHelper(0, 0);
 }
 
+function tokenRange2characterRange(expression, tokenRanges, startToken, endToken) {
+    const start = startToken === tokenRanges.length
+        ? expression.length
+        : tokenRanges[startToken][0];
+    const end = endToken === tokenRanges.length
+        ? expression.length
+        : tokenRanges[endToken - 1][tokenRanges[endToken - 1].length - 1];
+    return [start, end];
+}
+
 function isNonWhitespace(str, pos) {
     return str.slice(pos, pos + 1).trim() !== '';
 }
@@ -118,4 +128,4 @@ function isDoubleCharSymbol(str, pos, doubleCharSymbols) {
     return doubleCharSymbols.indexOf(str.slice(pos, pos + 2)) >= 0;
 }
 
-export { tokenizeCondition, conditionTokenAtPos, tokenizeOperatorValue, operatorValueTokenAtPos };
+export { tokenizeCondition, conditionTokenAtPos, tokenizeOperatorValue, operatorValueTokenAtPos, tokenRange2characterRange };
