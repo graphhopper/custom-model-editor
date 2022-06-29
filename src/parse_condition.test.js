@@ -1,4 +1,4 @@
-import {parse, parseTokens} from './parse';
+import {parse, parseTokens} from './parse_condition';
 
 const categories = {
     "a": {type: 'enum', values: ['a1', 'a2', 'a3']},

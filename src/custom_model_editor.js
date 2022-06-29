@@ -6,7 +6,7 @@ import "codemirror/addon/hint/show-hint";
 import "codemirror/addon/lint/lint";
 import {validateJson} from "./validate_json";
 import {complete} from "./complete.js";
-import {parse} from "./parse.js";
+import {parse as parseCondition} from "./parse_condition.js";
 import {completeJson} from "./complete_json";
 
 
@@ -124,7 +124,7 @@ class CustomModelEditor {
                 });
                 return;
             }
-            const parseRes = parse(condition.substring(1, condition.length-1), this._categories, areas);
+            const parseRes = parseCondition(condition.substring(1, condition.length-1), this._categories, areas);
             if (parseRes.error !== null) {
                 errors.push({
                     message: parseRes.error,
