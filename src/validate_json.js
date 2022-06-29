@@ -6,7 +6,7 @@ const operators = ['multiply_by', 'limit_to'];
 const statementKeys = clauses.concat(operators);
 
 let _conditionRanges = [];
-let _operatorExpressionRanges = [];
+let _operatorValueRanges = [];
 let _areas = [];
 
 /**
@@ -20,8 +20,8 @@ let _areas = [];
  * the speed/priority array objects must contain a cause that can be either 'if', 'else_if' or 'else' and
  * an operator that can be 'multiply_by' or 'limit_to'
  *
- * the clause value, called the 'condition', must be a string except when the clause is 'else' in which case the value must be null
- * the operator value, called the 'operator expression', must be either a number (legacy) or a string
+ * the clause value, called the 'condition', must be a string unless the clause is 'else' in which case the value must be null
+ * the operator value must be either a number (legacy) or a string
  *
  * 'else_if' and 'else' clauses must be preceded by an 'if' or 'else_if' clause
  *
@@ -33,13 +33,13 @@ let _areas = [];
  *               to 'syntax'
  * - conditionRanges: a list of character ranges in above format that indicates the positions of
  *                    the 'conditions', i.e. the values of 'if' and 'else_if' clauses
- * - operatorExpressionRanges: a list of character ranges in above format that indicates the position of the 'operator
- *                     expressions', i.e. the values of the 'multiply_by' or 'limit_to' operators
+ * - operatorValueRanges: a list of character ranges in above format that indicates the position of the, e.g. 'multiply_by'
+ *                        or 'limit_to', operators
  * - areas: the list of area names used in the document
  */
 export function validateJson(json) {
     _conditionRanges = [];
-    _operatorExpressionRanges = [];
+    _operatorValueRanges = [];
     _areas = [];
 
     if (json.trim().length === 0)
@@ -47,7 +47,7 @@ export function validateJson(json) {
             errors: [error('root', 'must be an object', [0, json.length])],
             jsonErrors: [],
             conditionRanges: _conditionRanges,
-            operatorExpressionRanges: _operatorExpressionRanges,
+            operatorValueRanges: _operatorValueRanges,
             areas: _areas
         }
 
@@ -72,7 +72,7 @@ export function validateJson(json) {
         errors,
         jsonErrors,
         conditionRanges: _conditionRanges,
-        operatorExpressionRanges: _operatorExpressionRanges,
+        operatorValueRanges: _operatorValueRanges,
         areas: _areas
     }
 }
@@ -166,7 +166,7 @@ function validateStatementValue(path, key, value) {
         if (!isJsonString(value)) {
             errors.push(error(`${path}[${key.value}]`, `must be a string. given type: ${displayType(value)}`, getRange(value)));
         } else {
-            _operatorExpressionRanges.push(getRange(value));
+            _operatorValueRanges.push(getRange(value));
         }
     }
     if (isClause === isOperator) {

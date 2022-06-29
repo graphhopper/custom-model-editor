@@ -1,4 +1,4 @@
-import {tokenize} from './tokenize.js';
+import {tokenizeCondition} from './tokenize.js';
 
 const comparisonOperators = ['==', '!='];
 const numericComparisonOperators = ['<', '<=', '>', '>=', '==', '!='];
@@ -10,14 +10,14 @@ let _tokens;
 let _idx;
 
 /**
- * Tokenizes and then parses the given expression using the given categories and areas. Returns an object containing:
+ * Tokenizes and then parses the given condition using the given categories and areas. Returns an object containing:
  * - error, completions: see parseTokens
  * - range: the character range in which the (first) error occurred as list [startInclusive, endExclusive].
  *          if there are no invalid tokens, but rather something is missing the range will be
- *          [expression.length, expression.length]
+ *          [condition.length, condition.length]
  */
-function parse(expression, categories, areas) {
-    const tokens = tokenize(expression);
+function parse(condition, categories, areas) {
+    const tokens = tokenizeCondition(condition);
     const result = parseTokens(tokens.tokens, categories, areas);
     result.tokens = tokens.tokens;
 
@@ -27,10 +27,10 @@ function parse(expression, categories, areas) {
         const errorStartToken = result.range[0];
         const errorEndToken = result.range[1];
         const start = errorStartToken === tokenRanges.length
-            ? expression.length
+            ? condition.length
             : tokenRanges[errorStartToken][0];
         const end = errorEndToken === tokenRanges.length
-            ? expression.length
+            ? condition.length
             : tokenRanges[errorEndToken - 1][tokenRanges[errorEndToken - 1].length - 1];
         result.range = [start, end];
     }
@@ -40,9 +40,9 @@ function parse(expression, categories, areas) {
 /**
  * Parses a given list of tokens according to the following grammar.
  *
- * expression -> comparison (logicOperator comparison)*
+ * condition -> comparison (logicOperator comparison)*
  * comparison -> enumCategory comparator value | numericCategory numericComparator number | boolean | booleanCategory |
- *               booleanCategory comparator boolean | 'in_' area | 'in_' area comparator boolean | value'(' expression ')'
+ *               booleanCategory comparator boolean | 'in_' area | 'in_' area comparator boolean | value'(' condition ')'
  * logicOperator -> '&&' | '||'
  * comparator -> '==' | '!='
  * numericComparator -> '>' | '<' | '>=' | '<=' | '==' | '!='
@@ -51,7 +51,7 @@ function parse(expression, categories, areas) {
  * boolean -> 'true' | 'false'
  *
  * Note that we do not care about operator precedence between && and || because our aim is not
- * actually evaluating the expression, but rather checking the validity.
+ * actually evaluating the condition, but rather checking the validity.
  *
  * The categories parameter is an object that maps category names to objects that contain the category type
  * `enum`, `boolean` or `numeric` and a list of possible (string) values (for `enum` only).
@@ -59,7 +59,7 @@ function parse(expression, categories, areas) {
  * The areas parameter is a list of valid area names.
  *
  * This function returns an object containing:
- * - error: an error string (or null) in case the tokens do not represent a valid expression.
+ * - error: an error string (or null) in case the tokens do not represent a valid condition.
  *          the parsing stops when the first error is encountered.
  * - range: the tokens range in which the (first) error occurred as list [startInclusive, endExclusive].
  *          if there are no invalid tokens, but rather something is missing the range will be
@@ -84,19 +84,19 @@ function parseTokens(tokens, categories, areas) {
     _tokens = tokens;
     _idx = 0;
 
-    const result = parseExpression();
+    const result = parseCondition();
     if (result.error !== null) return result;
     if (finished()) return valid();
     return error(`unexpected token '${_tokens[_idx]}'`, [_idx, _idx + 1], logicOperators);
 }
 
-function parseExpression() {
-    // rule: expression -> comparison
+function parseCondition() {
+    // rule: condition -> comparison
     const result = parseComparison();
     if (result.error !== null) return result;
     if (finished()) return valid();
 
-    // rule: expression -> comparison (logicOperator comparison)*
+    // rule: condition -> comparison (logicOperator comparison)*
     while (isLogicOperator()) {
         nextToken();
         if (finished())
@@ -225,12 +225,12 @@ function parseTripleComparison(allowedComparators, isValid, getAllowedValues) {
 }
 
 function parseComparisonInParentheses() {
-    // rule: comparison -> '(' expression ')'
+    // rule: comparison -> '(' condition ')'
     const from = _idx;
     if (finished())
         return error(`unmatched opening '('`, [from, _idx], []);
     nextToken();
-    const result = parseExpression();
+    const result = parseCondition();
     if (result.error !== null) return result;
     if (!isClosing()) return error(`unmatched opening '('`, [from, _idx], []);
     nextToken();

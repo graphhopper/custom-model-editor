@@ -1,16 +1,25 @@
 /** Symbols used for the tokenization */
-const singleCharSymbols = ['(', ')', '<', '>'];
-const doubleCharSymbols = ['||', '&&', '==', '!=', '<=', '>='];
+const conditionSingleCharSymbols = ['(', ')', '<', '>'];
+const conditionDoubleCharSymbols = ['||', '&&', '==', '!=', '<=', '>='];
+const operatorValueSingleCharSymbols = ['*', '/', '+', '-'];
+const operatorValueDoubleCharSymbols = [];
 
+function conditionTokenAtPos(condition, pos) {
+    return tokenAtPos(condition, pos, conditionSingleCharSymbols, conditionDoubleCharSymbols);
+}
+
+function operatorValueTokenAtPos(operatorValue, pos) {
+    return tokenAtPos(operatorValue, pos, operatorValueSingleCharSymbols, operatorValueDoubleCharSymbols);
+}
 /**
  * Finds the token at the given position. Returns an object containing:
  * - token: the token as string or null if there is only whitespace at the given position
- * - range: the position/range of the token (or the whitespace) in the expression as array [startInclusive, endExclusive] 
+ * - range: the position/range of the token (or the whitespace) in the condition as array [startInclusive, endExclusive]
  */
-function tokenAtPos(expression, pos) {
-    if (pos < 0 || pos >= expression.length)
-        throw `pos ${pos} out of range: [0, ${expression.length}[`;
-    const tokens = tokenize(expression);
+function tokenAtPos(condition, pos, singleCharSymbols, doubleCharSymbols) {
+    if (pos < 0 || pos >= condition.length)
+        throw `pos ${pos} out of range: [0, ${condition.length}[`;
+    const tokens = tokenize(condition, singleCharSymbols, doubleCharSymbols);
     for (let i = 0; i < tokens.ranges.length; ++i) {
         const range = tokens.ranges[i];
         if (range[0] <= pos && pos < range[1]) {
@@ -30,19 +39,27 @@ function tokenAtPos(expression, pos) {
     return {
         token: null,
         range: tokens.ranges.length === 0
-            ? [0, expression.length]
-            : [tokens.ranges[tokens.ranges.length - 1][1], expression.length]
+            ? [0, condition.length]
+            : [tokens.ranges[tokens.ranges.length - 1][1], condition.length]
     };
+}
+
+function tokenizeCondition(condition) {
+    return tokenize(condition, conditionSingleCharSymbols, conditionDoubleCharSymbols);
+}
+
+function tokenizeOperatorValue(operatorValue) {
+    return tokenize(operatorValue, operatorValueSingleCharSymbols, operatorValueDoubleCharSymbols);
 }
 
 /**
  * Tokenizes the given string/expression and returns the tokens along with their positions
  * given as arrays [start, end].
  * 
- * The expression is split on all whitespace symbols (which are discarded) and 
- * symbols (which are kept as tokens).
+ * The expression is split on all whitespace symbols (which are discarded) and the given single- or double- char symbols
+ * (which are kept as tokens).
  */
-function tokenize(expression) {
+function tokenize(expression, singleCharSymbols, doubleCharSymbols) {
     let ranges = [];
     let tokens = [];
 
@@ -61,11 +78,11 @@ function tokenize(expression) {
         // we recursively extract one symbol or character at a time and repeat the same function for 
         // the remaining expression.. we keep track of how many characters we found since the last symbol
         // or whitespace ('buffer')
-        if (isDoubleCharSymbol(expression, pos)) {
+        if (isDoubleCharSymbol(expression, pos, doubleCharSymbols)) {
             push(pos - buffer, pos);
             push(pos, pos + 2);
             return tokenizeHelper(pos + 2, 0);
-        } else if (isSingleCharSymbol(expression, pos)) {
+        } else if (isSingleCharSymbol(expression, pos, singleCharSymbols)) {
             push(pos - buffer, pos);
             push(pos, pos + 1);
             return tokenizeHelper(pos + 1, 0);
@@ -93,12 +110,12 @@ function isNonWhitespace(str, pos) {
     return str.slice(pos, pos + 1).trim() !== '';
 }
 
-function isSingleCharSymbol(str, pos) {
+function isSingleCharSymbol(str, pos, singleCharSymbols) {
     return singleCharSymbols.indexOf(str[pos]) >= 0;
 }
 
-function isDoubleCharSymbol(str, pos) {
+function isDoubleCharSymbol(str, pos, doubleCharSymbols) {
     return doubleCharSymbols.indexOf(str.slice(pos, pos + 2)) >= 0;
 }
 
-export { tokenize, tokenAtPos };
+export { tokenizeCondition, conditionTokenAtPos, tokenizeOperatorValue, operatorValueTokenAtPos };

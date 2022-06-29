@@ -186,7 +186,7 @@ describe('validate_json', () => {
         expect(res.conditionRanges).toStrictEqual([[18, 25], [58, 65], [120, 127]]);
     });
 
-    test('speed/priority operator expressions must be strings', () => {
+    test('speed/priority operator values must be strings', () => {
         test_validate(`{"speed": [{"if": "condition", "multiply_by": []}]}`, [
             `speed[0][multiply_by]: must be a string. given type: array, range: [46, 48]`
         ]);
@@ -200,11 +200,11 @@ describe('validate_json', () => {
         test_validate(`{"speed": [{"if": "condition", "limit_to": "100"}]}`, []);
     });
 
-    test('get operator expression ranges', () => {
+    test('get operator value ranges', () => {
         const res = validateJson((`{"speed": [{"if": "cond1", "limit_to": "speed * 0.9"}, {"else_if": "cond2", "multiply_by": "0.3"}],
           "priority": [{"if": "cond3", "multiply_by": "curvature + 75"}]}`));
         expect(res.errors).toStrictEqual([]);
-        expect(res.operatorExpressionRanges).toStrictEqual([[39, 52],[91, 96],[154, 170]]);
+        expect(res.operatorValueRanges).toStrictEqual([[39, 52],[91, 96],[154, 170]]);
     })
 
     test('statements must follow certain order', () => {

@@ -69,7 +69,7 @@ describe("parse", () => {
         test_parseTokens(['(', 'a', '==', ')', 'a1'], `invalid a: ')'`, [3, 4], ['a1', 'a2', 'a3']);
         test_parseTokens(['a', '(', '==', 'a1', ')'], `invalid operator '('`, [1, 2], ['==', '!=']);
         // here it would be nice to recognize that the right side is valid and 'only' the a category on the far left
-        // makes the expression invalid, but probably this is just how it is because we parse from left to right(?)
+        // makes the condition invalid, but probably this is just how it is because we parse from left to right(?)
         test_parseTokens(['a', '(', 'b', '&&', 'b1', ')'], `invalid operator '('`, [1, 2], ['==', '!=']);
     });
 
@@ -169,13 +169,13 @@ describe("parse", () => {
         expect(parse('(a==a1', categories, areas).tokens).toStrictEqual(['(', 'a', '==', 'a1'])
     })
 
-    function test_parse_valid(expression) {
-        const res = parse(expression, categories, areas);
+    function test_parse_valid(condition) {
+        const res = parse(condition, categories, areas);
         check(test_parse_valid, res, null, [], []);
     }
 
-    function test_parse(expression, error, range, completions) {
-        const res = parse(expression, categories, areas);
+    function test_parse(condition, error, range, completions) {
+        const res = parse(condition, categories, areas);
         check(test_parse, res, error, range, completions);
     }
 

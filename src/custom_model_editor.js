@@ -136,6 +136,12 @@ class CustomModelEditor {
             Object.keys(this._categories).filter(c => parseRes.tokens.includes(c)).forEach(c => usedCategories.add(c));
         });
 
+        const operatorValueRanges = validateResult.operatorValueRanges;
+        operatorValueRanges.forEach((oer, i) => {
+           const operatorValue = text.substring(oer[0], oer[1]);
+
+        });
+
         // if there are no errors we consider the jsonErrors next (but most of them should be fixed at this point),
         // catching the errors manually before we get here can be better, because this way we can provide better error
         // messages and ranges and in some cases the user experience is better if we first show the more specific

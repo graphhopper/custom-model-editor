@@ -1,12 +1,12 @@
-import { tokenize, tokenAtPos } from './tokenize';
+import { tokenizeCondition, conditionTokenAtPos } from './tokenize';
 
 describe("tokenize", () => {
     test("extract token", () => {
-        expect(tokenize('\n\ta ==(a1 ').tokens).toStrictEqual(['a', '==', '(', 'a1']);
-        expect(tokenize(' (a==a1 )&&').tokens).toStrictEqual(['(', 'a', '==', 'a1', ')', '&&']);
-        expect(tokenize(' ( a&&== a1)) ').tokens).toStrictEqual(['(', 'a', '&&', '==', 'a1', ')', ')']);
-        expect(tokenize('(a==a1)||(b==b1)').tokens).toStrictEqual(['(', 'a', '==', 'a1', ')', '||', '(', 'b', '==', 'b1', ')']);
-        expect(tokenize('(a<=a1)||(b>b1)').tokens).toStrictEqual(['(', 'a', '<=', 'a1', ')', '||', '(', 'b', '>', 'b1', ')']);
+        expect(tokenizeCondition('\n\ta ==(a1 ').tokens).toStrictEqual(['a', '==', '(', 'a1']);
+        expect(tokenizeCondition(' (a==a1 )&&').tokens).toStrictEqual(['(', 'a', '==', 'a1', ')', '&&']);
+        expect(tokenizeCondition(' ( a&&== a1)) ').tokens).toStrictEqual(['(', 'a', '&&', '==', 'a1', ')', ')']);
+        expect(tokenizeCondition('(a==a1)||(b==b1)').tokens).toStrictEqual(['(', 'a', '==', 'a1', ')', '||', '(', 'b', '==', 'b1', ')']);
+        expect(tokenizeCondition('(a<=a1)||(b>b1)').tokens).toStrictEqual(['(', 'a', '<=', 'a1', ')', '||', '(', 'b', '>', 'b1', ')']);
     });
 
     test("extract tokens and ranges", () => {
@@ -57,8 +57,8 @@ describe("tokenize", () => {
         test_tokenAtPos('  abc==\n\n\tdef\n&&', 12, 'def', [10, 13]);
     });
 
-    function test_tokenAtPos(expression, pos, token, range) {
-        const tokenPos = tokenAtPos(expression, pos);
+    function test_tokenAtPos(condition, pos, token, range) {
+        const tokenPos = conditionTokenAtPos(condition, pos);
         try {
             expect(tokenPos.token).toBe(token);
             expect(tokenPos.range).toStrictEqual(range);
@@ -68,8 +68,8 @@ describe("tokenize", () => {
         }
     }
 
-    function test_tokenize(expression, token, ranges) {
-        const res = tokenize(expression, token);
+    function test_tokenize(condition, token, ranges) {
+        const res = tokenizeCondition(condition, token);
         try {
             expect(res.tokens).toStrictEqual(token);
             expect(res.ranges).toStrictEqual(ranges);
