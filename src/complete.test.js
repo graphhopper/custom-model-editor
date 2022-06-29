@@ -1,4 +1,4 @@
-import {complete} from './complete';
+import {completeCondition as complete} from './complete';
 
 const categories = {
     'a': {type: 'enum', values: ['a1a', 'a1b', 'a2a', 'a2b']},

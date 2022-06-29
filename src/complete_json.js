@@ -58,7 +58,7 @@ export function completeJson(content, pos) {
         /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object-property\[(limit_to|multiply_by)]-value$/.test(signatureString)
     ) {
         return {
-            suggestions: ['__hint__type a string'],
+            suggestions: ['__hint__type an expression'],
             range: jsonPath.tokenRange
         }
     } else if (

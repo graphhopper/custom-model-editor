@@ -5,7 +5,7 @@ import "codemirror/addon/edit/closebrackets";
 import "codemirror/addon/hint/show-hint";
 import "codemirror/addon/lint/lint";
 import {validateJson} from "./validate_json";
-import {complete} from "./complete.js";
+import {completeCondition, completeOperatorValue} from "./complete.js";
 import {parse as parseCondition} from "./parse_condition.js";
 import {parse as parseOperatorValue} from "./parse_operator_value.js";
 import {completeJson} from "./complete_json";
@@ -193,21 +193,9 @@ class CustomModelEditor {
         const completeRes = completeJson(this.cm.getValue(), cursor);
         if (completeRes.suggestions.length > 0) {
             if (completeRes.suggestions.length === 1 && completeRes.suggestions[0] === `__hint__type a condition`) {
-                // if the json completion suggests entering a condition we run the condition completion on the found
-                // condition range instead
-                let start = completeRes.range[0];
-                let stop = completeRes.range[1];
-                if (this.cm.getValue()[start] === `"`) start++;
-                if (this.cm.getValue()[stop - 1] === `"`) stop--;
-                const condition = this.cm.getValue().substring(start, stop);
-                const completeConditionRes = complete(condition, cursor - start, this._categories, validateResult.areas);
-                if (completeConditionRes.suggestions.length > 0) {
-                    const range = [
-                        this.cm.posFromIndex(completeConditionRes.range[0] + start),
-                        this.cm.posFromIndex(completeConditionRes.range[1] + start)
-                    ];
-                    this._suggest(range, completeConditionRes.suggestions.sort());
-                }
+                this._completeExpression(completeRes, cursor, (expression, pos) => completeCondition(expression, pos, this._categories, validateResult.areas));
+            } else if (completeRes.suggestions.length === 1 && completeRes.suggestions[0] === `__hint__type an expression`) {
+                this._completeExpression(completeRes, cursor, (expression, pos) => completeOperatorValue(expression, pos, this._numericCategories));
             } else {
                 // limit the replacement range to the current line and do not include the new line character at the
                 // end of the line. otherwise auto-complete messes up the following lines.
@@ -223,6 +211,22 @@ class CustomModelEditor {
                 ];
                 this._suggest(range, completeRes.suggestions);
             }
+        }
+    }
+
+    _completeExpression = (completeRes, cursor, completeExpression) => {
+        let start = completeRes.range[0];
+        let stop = completeRes.range[1];
+        if (this.cm.getValue()[start] === `"`) start++;
+        if (this.cm.getValue()[stop - 1] === `"`) stop--;
+        const expression = this.cm.getValue().substring(start, stop);
+        const completeExpressionRes = completeExpression(expression, cursor - start);
+        if (completeExpressionRes.suggestions.length > 0) {
+            const range = [
+                this.cm.posFromIndex(completeExpressionRes.range[0] + start),
+                this.cm.posFromIndex(completeExpressionRes.range[1] + start)
+            ];
+            this._suggest(range, completeExpressionRes.suggestions.sort());
         }
     }
 

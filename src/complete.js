@@ -1,27 +1,37 @@
-import {parse} from './parse_condition.js';
-import {conditionTokenAtPos} from "./tokenize.js";
+import {parse as parseCondition} from './parse_condition.js';
+import {parse as parseOperatorValue} from './parse_operator_value.js';
+import {conditionTokenAtPos, operatorValueTokenAtPos} from './tokenize.js';
+
+function completeCondition(condition, pos, categories, areas) {
+    return complete(condition, pos, condition => parseCondition(condition, categories, areas), (condition, pos) => conditionTokenAtPos(condition, pos));
+}
+
+function completeOperatorValue(operatorValue, pos, numericCategories) {
+    return complete(operatorValue, pos, operatorValue => parseOperatorValue(operatorValue, numericCategories), (condition, pos) => operatorValueTokenAtPos(condition, pos));
+}
 
 /**
- * Returns auto-complete suggestions for a given string/condition, categories, areas, and a character position.
+ * Returns auto-complete suggestions for a given string/expression, a character position and two functions:
+ *
  * The returned object contains two fields:
  *  - suggestions: a list of suggestions/strings
  *  - range: the character range that is supposed to be replaced by the suggestion
  */
-function complete(condition, pos, categories, areas) {
-    const lastNonWhitespace = getLastNonWhitespacePos(condition);
+function complete(expression, pos, parse, tokenAtPos) {
+    const lastNonWhitespace = getLastNonWhitespacePos(expression);
     if (pos > lastNonWhitespace) {
-        // pad the condition with whitespace until pos, remove everything after pos
-        let parseCondition = condition;
-        while (parseCondition.length < pos)
-            parseCondition += ' ';
-        parseCondition = parseCondition.slice(0, pos);
-        // we use a little trick: we run parse() on a manipulated condition where we inserted a dummy character to
+        // pad the expression with whitespace until pos, remove everything after pos
+        let parseExpression = expression;
+        while (parseExpression.length < pos)
+            parseExpression += ' ';
+        parseExpression = parseExpression.slice(0, pos);
+        // we use a little trick: we run parse() on a manipulated expression where we inserted a dummy character to
         // see which completions are offered to us (assuming we typed in something)
-        parseCondition += '…';
-        const parseResult = parse(parseCondition, categories, areas);
-        const tokenPos = conditionTokenAtPos(parseCondition, pos);
+        parseExpression += '…';
+        const parseResult = parse(parseExpression);
+        const tokenPos = tokenAtPos(parseExpression, pos);
 
-        // in case the condition has an error at a position that is parsed before our position we return no suggestions
+        // in case the expression has an error at a position that is parsed before our position we return no suggestions
         if (parseResult.range[0] !== tokenPos.range[0])
             return empty();
 
@@ -36,14 +46,14 @@ function complete(condition, pos, categories, areas) {
             range: suggestions.length === 0 ? null : [tokenPos.range[0], pos]
         }
     } else {
-        let tokenPos = conditionTokenAtPos(condition, pos);
+        let tokenPos = tokenAtPos(expression, pos);
         // we replace the token at pos with a dummy character
-        const parseCondition = condition.substring(0, tokenPos.range[0]) + '…' + condition.substring(tokenPos.range[1]);
+        const parseExpression = expression.substring(0, tokenPos.range[0]) + '…' + expression.substring(tokenPos.range[1]);
         // pos might be a whitespace position but right at the end of the *previous* token. we have to deal with some
-        // special cases (and this is actually similar to the situation where we are at the end of the condition).
+        // special cases (and this is actually similar to the situation where we are at the end of the expression).
         // this is quite messy, but relying on the tests for now...
-        const modifiedTokenPos = conditionTokenAtPos(parseCondition, tokenPos.range[0]);
-        const parseResult = parse(parseCondition, categories, areas);
+        const modifiedTokenPos = tokenAtPos(parseExpression, tokenPos.range[0]);
+        const parseResult = parse(parseExpression);
         if (parseResult.range[0] !== modifiedTokenPos.range[0])
             return empty();
         const suggestions = parseResult.completions.filter(c => {
@@ -82,4 +92,4 @@ function startsWith(str, substr) {
     return str.substring(0, substr.length) === substr;
 }
 
-export {complete};
+export {completeCondition, completeOperatorValue};
