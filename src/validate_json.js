@@ -183,24 +183,47 @@ function validateDistanceInfluence(value) {
 }
 
 function validateAreas(areas) {
-    const validateKeys = (path, keys, range) => {
-        _areas = keys;
-        return [];
-    }
-    return validateObject(`areas`, areas,
-        isValidAreaName, validateKeys, `names may only contain a-z, digits and _`, validateArea);
+    const featureCollectionKeys = ['type', 'features'];
+    const message = `possible keys: ${displayList(featureCollectionKeys)}`;
+    const keyIsValid = (key) => featureCollectionKeys.indexOf(key.value) >= 0;
+    return validateObject(`areas`, areas, keyIsValid, validateRequiredAreaCollectionKeys, message, validateAreaCollectionField)
 }
 
-function validateArea(path, areaName, area) {
+function validateRequiredAreaCollectionKeys(path, keys, range) {
+    const requiredKeys = ['type', 'features'];
+    const errors = [];
+    for (let i = 0; i < requiredKeys.length; i++) {
+        if (keys.indexOf(requiredKeys[i]) < 0)
+            errors.push(error(path, `missing '${requiredKeys[i]}'. given: ${displayList(keys)}`, range));
+    }
+    return errors;
+}
+
+function validateAreaCollectionField(path, key, value) {
+    if (key.value === 'type') {
+        if (!isJsonString(value)) {
+            return [error(`${path}[${key.value}]`, `must be "FeatureCollection". given type: ${displayType(value)}`, getRange(value))];
+        } else if (value.value !== 'FeatureCollection')
+            return [error(`${path}[${key.value}]`, `must be "FeatureCollection". given: "${value.value}"`, getRange(value))];
+        else
+            return [];
+    } else if (key.value === 'features') {
+        return validateList(`${path}[${key.value}]`, value, 0, -1, validateArea);
+    } else {
+        console.error(`unexpected FeatureCollection field ${key.value}`);
+        return [];
+    }
+}
+
+function validateArea(path, area, areaIndex) {
     const areaKeys = ['type', 'geometry', 'id', 'properties'];
     const message = `possible keys: ${displayList(areaKeys)}`;
     const keyIsValid = (key) => areaKeys.indexOf(key.value) >= 0;
-    return validateObject(`${path}[${areaName.value}]`, area,
-        keyIsValid, validateRequiredAreaKeys, message, validateAreaField);
+    return validateObject(path, area, keyIsValid, validateRequiredAreaKeys, message, validateAreaField);
 }
 
 function validateRequiredAreaKeys(path, keys, range) {
-    const requiredAreaKeys = ['type', 'geometry'];
+    const requiredAreaKeys = ['type', 'id', 'geometry'];
     const errors = [];
     for (let i = 0; i < requiredAreaKeys.length; i++) {
         if (keys.indexOf(requiredAreaKeys[i]) < 0)
@@ -223,6 +246,13 @@ function validateAreaField(path, key, value) {
         if (!isJsonString(value)) {
             return [error(`${path}[${key.value}]`, `must be a string. given type: ${displayType(value)}`, getRange(value))];
         }
+        if (!isValidAreaId(value)) {
+            return [error(`${path}[${key.value}]`, `area ids may only contain a-z, A-Z, digits and _. given: '${value.value}'`, getRange(value))];
+        }
+        if (_areas.indexOf(value.value) >= 0) {
+            return [error(`${path}[${key.value}]`, `area ids must be unique. duplicate: '${value.value}'`, getRange(value))];
+        }
+        _areas.push(value.value)
     } else if (key.value === 'geometry') {
         const geometryKeys = ['type', 'coordinates'];
         const message = `possible keys: ${displayList(geometryKeys)}`;
@@ -313,9 +343,9 @@ function pointsEqual(p, q) {
     return p.children[0].value === q.children[0].value && p.children[1].value === q.children[1].value;
 }
 
-function isValidAreaName(areaName) {
-    const regex = /^[a-z][0-9A-Za-z_]*$/g
-    return regex.test(areaName.value);
+function isValidAreaId(areaId) {
+    const regex = /^[0-9A-Za-z][0-9A-Za-z_]*$/g
+    return regex.test(areaId.value);
 }
 
 function validateObject(path, obj, keyIsValid, validateKeys, message, validateKeyValuePair) {
