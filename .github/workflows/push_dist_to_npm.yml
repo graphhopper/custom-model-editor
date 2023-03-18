@@ -23,6 +23,7 @@ jobs:
       - name: Build
 
         run: |
+          npm install
           npm version --git-tag-version=false 0.0.0-$(git rev-parse HEAD)
           # limit distribution to the dist folder (just for this build), and set package name
           node -e "const packageJson=require('./package.json'); packageJson.files=['dist/']; packageJson.name='@graphhopper/custom-model-editor'; require('fs').writeFileSync('package.json', JSON.stringify(packageJson, null, 4));"
