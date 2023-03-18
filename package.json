@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "description": "Interactive text editor for GraphHopper's custom model",
   "main": "dist/index.js",
-  "private": "true",
   "scripts": {
     "watch": "webpack --watch --mode development",
     "build-dev": "webpack --mode development",
