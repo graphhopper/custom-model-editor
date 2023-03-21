@@ -62,39 +62,69 @@ export function completeJson(content, pos) {
             range: jsonPath.tokenRange
         }
     } else if (
-        /^root-object-property\[areas]-object(-property-key)?$/.test(signatureString)
+        /^root-object-property\[areas]-value$/.test(signatureString)
     ) {
         return {
-            suggestions: ['__hint__type an area name'],
+            suggestions: [` {\n    "type": "FeatureCollection",\n    "features": [\n      {\n        "type": "Feature",\n        "id": "area_id",\n        "geometry": {\n          "type": "Polygon",\n          "coordinates": [[[0, 0], [0, 0], [0, 0], [0, 0]]]\n        }\n      }\n    ]\n  }`],
             range: jsonPath.tokenRange
         }
     } else if (
-        /^root-object-property\[areas]-object-property\[[a-zA-Z0-9_]*]-object(-property-key)?$/.test(signatureString)
+       /^root-object-property\[areas]-object(-property-key)?$/.test(signatureString)
     ) {
-        const suggestions = ['"geometry"', '"type"']
-            .filter(s => !keyAlreadyExistsInOtherPairs(jsonPath.path[4].children, jsonPath.path[5], s));
+        const suggestions = ['"type"', '"features"']
+            .filter(s => !keyAlreadyExistsInOtherPairs(jsonPath.path[2].children, jsonPath.path[3], s));
         return {
-            suggestions,
+            suggestions: suggestions,
             range: jsonPath.signature[jsonPath.signature.length - 1] === 'key' ? jsonPath.tokenRange : [pos, pos + 1]
         }
     } else if (
-        /^root-object-property\[areas]-object-property\[[a-zA-Z0-9_]*]-object-property\[type]-value$/.test(signatureString)
+        /^root-object-property\[areas]-object-property\[type]-value$/.test(signatureString)
+    ) {
+        return {
+            suggestions: ['"FeatureCollection"'],
+            range: jsonPath.tokenRange
+        }
+    } else if (
+        /^root-object-property\[areas]-object-property\[features]-value$/.test(signatureString)
+    ) {
+        return {
+            suggestions: ['__hint__type an array of features'],
+            range: jsonPath.tokenRange
+        }
+    } else if (
+        /^root-object-property\[areas]-object-property\[features]-array\[[0-9]+]-object(-property-key)?$/.test(signatureString)
+    ) {
+        const suggestions = ['"type"', '"id"', '"geometry"']
+            .filter(s => !keyAlreadyExistsInOtherPairs(jsonPath.path[5].children, jsonPath.path[6], s));
+        return {
+            suggestions: suggestions,
+            range: jsonPath.signature[jsonPath.signature.length - 1] === 'key' ? jsonPath.tokenRange : [pos, pos + 1]
+        }
+    } else if (
+        /^root-object-property\[areas]-object-property\[features]-array\[[0-9]+]-object-property\[type]-value$/.test(signatureString)
     ) {
         return {
             suggestions: ['"Feature"'],
             range: jsonPath.tokenRange
         }
     } else if (
-        /^root-object-property\[areas]-object-property\[[a-zA-Z0-9_]*]-object-property\[geometry]-object(-property-key)?$/.test(signatureString)
+        /^root-object-property\[areas]-object-property\[features]-array\[[0-9]+]-object-property\[id]-value$/.test(signatureString)
+    ) {
+        return {
+            suggestions: [`__hint__type an area id`],
+            range: jsonPath.tokenRange
+        }
+    } else if (
+        /^root-object-property\[areas]-object-property\[features]-array\[[0-9]+]-object-property\[geometry]-object(-property-key)?$/.test(signatureString)
     ) {
         const suggestions = ['"type"', '"coordinates"']
-            .filter(s => !keyAlreadyExistsInOtherPairs(jsonPath.path[6].children, jsonPath.path[7], s));
+            .filter(s => !keyAlreadyExistsInOtherPairs(jsonPath.path[7].children, jsonPath.path[8], s));
         return {
             suggestions,
             range: jsonPath.signature[jsonPath.signature.length - 1] === 'key' ? jsonPath.tokenRange : [pos, pos + 1]
         }
     } else if (
-        /^root-object-property\[areas]-object-property\[[a-zA-Z0-9_]*]-object-property\[geometry]-object-property\[type]-value$/.test(signatureString)
+        /^root-object-property\[areas]-object-property\[features]-array\[[0-9]+]-object-property\[geometry]-object-property\[type]-value$/.test(signatureString)
     ) {
         return {
             suggestions: ['"Polygon"'],

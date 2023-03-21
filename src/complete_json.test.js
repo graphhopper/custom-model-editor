@@ -46,22 +46,23 @@ describe('complete_json', () => {
     });
 
     test(`areas`, () => {
-        test_complete(`{"areas": {  "x"`, 14, [`__hint__type an area name`], [13, 16]);
-        test_complete(`{"areas": {     `, 14, [`__hint__type an area name`], [10, 16]);
-        test_complete(`{"areas": {  "berlin": {},  "x"`, 29, [`__hint__type an area name`], [28, 31]);
-        test_complete(`{"areas": {  "berlin": {  "x"`, 27, [`"geometry"`, `"type"`], [26, 29]);
-        test_complete(`{"areas":{  "berlin": {},  "munich": {    "x"`, 42, [`"geometry"`, `"type"`], [42, 45]);
-        test_complete(`{"areas": {  "berlin":  {   "type": "Feature",   `, 47, [`"geometry"`], [47, 48]);
-        test_complete(`{"areas":  {  "berlin": {    "type": "x"`, 38, [`"Feature"`], [37, 40]);
-        test_complete(`{\n "areas": {\n  "berlin": {\n   `, 34, [`"geometry"`, `"type"`], [34, 35]);
-        test_complete(`{\n "areas": {\n  "berlin": {\n   "x"`, 34, [`"geometry"`, `"type"`], [31, 34]);
+        test_complete(`{"areas": {  "x"`, 14, [`"type"`, `"features"`], [13, 16]);
+        test_complete(`{"areas": {  "x", "type": "FeatureCollection"`, 14, [`"features"`], [13, 16]);
+        test_complete(`{"areas": {  "features": [], "x"`, 30, [`"type"`], [29, 32]);
+        test_complete(`{"areas": {  "type": x`, 21, [`"FeatureCollection"`], [20, 22]);
+        test_complete(`{"areas": {  "type": "FeatureCollection", "features": [{"id": "x"`, 63, [`__hint__type an area id`], [62, 65]);
+        test_complete(`{"areas": {  "type": "FeatureCollection", "features": [{"id":        `, 63, [`__hint__type an area id`], [61, 69]);
+        test_complete(`{"areas": {  "type": "FeatureCollection", "features": [{ "x"`, 58, [`"type"`, `"id"`, `"geometry"`], [57, 60]);
+        test_complete(`{"areas": {  "type": "FeatureCollection", "features": [{"type": "Feature", "id": "Berlin",   `, 90, [`"geometry"`], [90, 91]);
+        test_complete(`{"areas": {  "type": "FeatureCollection", "features": [{"type": x, "id": "Berlin",   `, 64, [`"Feature"`], [63, 65]);
+        test_complete(`{\n "areas": {"type": "FeatureCollection", "features": [\n  {\n   `, 65, [`"type"`, `"id"`, `"geometry"`], [65, 66]);
     });
 
     test(`areas geometry`, () => {
-        test_complete(`{"areas": { "berlin": {  "geometry": {   "x"`, 42, [`"type"`, `"coordinates"`], [41, 44]);
-        test_complete(`{"areas": { "berlin": {  "geometry": {      `, 42, [`"type"`, `"coordinates"`], [42, 43]);
-        test_complete(`{"areas": { "berlin": {  "geometry": {   "type": "x"`, 50, [`"Polygon"`], [49, 52]);
-        test_complete(`{"areas": { "berlin": {  "geometry": {   "type": "Polygon",  "x"`, 62, [`"coordinates"`], [61, 64]);
+        test_complete(`{"areas": { "type": "FeatureCollection", "features": [ {"id": "berlin", "geometry": {   "x"`, 90, [`"type"`, `"coordinates"`], [88, 91]);
+        test_complete(`{"areas": { "type": "FeatureCollection", "features": [ {"id": "berlin", "geometry": {      `, 90, [`"type"`, `"coordinates"`], [90, 91]);
+        test_complete(`{"areas": { "type": "FeatureCollection", "features": [ {"id": "berlin", "geometry": {   "type": "x"`, 97, [`"Polygon"`], [96, 99]);
+        test_complete(`{"areas": { "type": "FeatureCollection", "features": [ {"id": "berlin", "geometry": {   "type": "Polygon",  "x"`, 109, [`"coordinates"`], [108, 111]);
     });
 
 });
@@ -140,10 +141,10 @@ describe("get_json_path", () => {
 
     test(`areas`, () => {
         test_path(`{"areas":  "x"`, 12, [`root`, `object`, `property[areas]`, `value`], [11, 14]);
-        test_path(`{"areas": { "berlin":    "x"`, 25, [`root`, `object`, `property[areas]`, `object`, `property[berlin]`, `value`], [25, 28]);
-        test_path(`{"areas":  {"berlin": {   "type": "Feature"    "x"`, 48, [`root`, `object`, `property[areas]`, `object`, `property[berlin]`, `object`, `property`, `key`], [47, 50]);
-        test_path(`{"areas":{  "berlin": {   "type": "Feature"    "geometry": []},  "x"`, 65, [`root`, `object`, `property[areas]`, `object`, `property`, `key`], [65, 68]);
-        test_path(`{\n "areas": {\n  "berlin": {\n   `, 31, [`root`, `object`, `property[areas]`, `object`, `property[berlin]`, `object`], [26, 31]);
+        test_path(`{"areas": { "type": "FeatureCollection", "features": [{"id": "berlin",    "x"`, 75, [`root`, `object`, `property[areas]`, `object`, `property[features]`, `array[0]`, `object`, `property`, `key`], [74, 77]);
+        test_path(`{"areas":  {"features": [{"id": "berlin", "type": "Feature"    "x"`, 64, [`root`, `object`, `property[areas]`, `object`, `property[features]`, `array[0]`, `object`, `property`, `key`], [63, 66]);
+        test_path(`{"areas":{ "features": [{   "type": "Feature"    "geometry": []},  "x"`, 67, [`root`, `object`, `property[areas]`, `object`, `property[features]`, `array[1]`, `literal`], [67, 70]);
+        test_path(`{\n "areas": {\n "features": [{"id": "berlin",  `, 37, [`root`, `object`, `property[areas]`, `object`, `property[features]`, `array[0]`, `object`, `property[id]`, `value`], [35, 43]);
     });
 });
 
