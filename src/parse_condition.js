@@ -32,7 +32,7 @@ function parse(condition, categories, areas) {
  *
  * condition -> comparison (logicOperator comparison)*
  * comparison -> enumCategory comparator value | numericCategory numericComparator number | boolean | booleanCategory |
- *               booleanCategory comparator boolean | 'in_' area | 'in_' area comparator boolean | value'(' condition ')'
+ *               booleanCategory comparator boolean | 'in_' area | 'in_' area comparator boolean | '(' condition ')'
  * logicOperator -> '&&' | '||'
  * comparator -> '==' | '!='
  * numericComparator -> '>' | '<' | '>=' | '<=' | '==' | '!='
@@ -109,7 +109,7 @@ function parseComparison() {
     } else if (isArea()) {
         return parseArea();
     } else if (isOpening()) {
-        return parseComparisonInParentheses();
+        return parseConditionInParentheses();
     } else if (finished()) {
         return error(`empty comparison`, [_idx, _idx], []);
     } else if (isInvalidAreaOperator()) {
@@ -214,11 +214,9 @@ function parseTripleComparison(allowedComparators, isValid, getAllowedValues) {
     return valid();
 }
 
-function parseComparisonInParentheses() {
+function parseConditionInParentheses() {
     // rule: comparison -> '(' condition ')'
     const from = _idx;
-    if (finished())
-        return error(`unmatched opening '('`, [from, _idx], []);
     _idx++;
     const result = parseCondition();
     if (result.error !== null) return result;
