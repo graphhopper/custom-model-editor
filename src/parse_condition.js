@@ -88,7 +88,7 @@ function parseCondition() {
 
     // rule: condition -> comparison (logicOperator comparison)*
     while (isLogicOperator()) {
-        nextToken();
+        _idx++;
         if (finished())
             return error(`unexpected token '${_tokens[_idx - 1]}'`, [_idx - 1, _idx], []);
         const result = parseComparison();
@@ -219,20 +219,16 @@ function parseComparisonInParentheses() {
     const from = _idx;
     if (finished())
         return error(`unmatched opening '('`, [from, _idx], []);
-    nextToken();
+    _idx++;
     const result = parseCondition();
     if (result.error !== null) return result;
     if (!isClosing()) return error(`unmatched opening '('`, [from, _idx], []);
-    nextToken();
+    _idx++;
     return valid();
 }
 
 function finished() {
     return _idx === _tokens.length;
-}
-
-function nextToken() {
-    _idx++;
 }
 
 function isLogicOperator() {
