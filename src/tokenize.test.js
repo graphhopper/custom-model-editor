@@ -7,6 +7,7 @@ describe("tokenize", () => {
         expect(tokenizeCondition(' ( a&&== a1)) ').tokens).toStrictEqual(['(', 'a', '&&', '==', 'a1', ')', ')']);
         expect(tokenizeCondition('(a==a1)||(b==b1)').tokens).toStrictEqual(['(', 'a', '==', 'a1', ')', '||', '(', 'b', '==', 'b1', ')']);
         expect(tokenizeCondition('(a<=a1)||(b>b1)').tokens).toStrictEqual(['(', 'a', '<=', 'a1', ')', '||', '(', 'b', '>', 'b1', ')']);
+        expect(tokenizeCondition('!!(a>(!!=').tokens).toStrictEqual(['!', '!', '(', 'a', '>', '(', '!', '!=']);
     });
 
     test("extract tokens and ranges", () => {

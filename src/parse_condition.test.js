@@ -45,6 +45,8 @@ describe("parse", () => {
         test_parseTokens_valid(['(', 'false', ')']);
         test_parseTokens_valid(['bool1']);
         test_parseTokens_valid(['(', 'bool2', ')']);
+        test_parseTokens_valid(['!', 'bool2']);
+        test_parseTokens_valid(['!', '!', '!', '(', 'bool2', ')']);
     });
 
     test("parse single comparison, invalid", () => {
@@ -131,6 +133,17 @@ describe("parse", () => {
         test_parse_valid('((a==a1)||b==b1)');
         test_parse_valid('(a==a1)||b!=b1')
         test_parse_valid('a==a1&&((b==b1))');
+        test_parse_valid('!bool1');
+        test_parse_valid('!true');
+        test_parse_valid('!in_area1');
+        test_parse_valid('!(bool1)');
+        test_parse_valid('bool1 && !in_area1')
+        test_parse_valid('!(a==a1)');
+        test_parse_valid('!!(a==a1)');
+        test_parse_valid('!!!(a==a1)');
+        test_parse_valid('!!!(!(!(a!=a1)))');
+        test_parse_valid('!!(!bool1 && a != a1)');
+        test_parse_valid('!(a == a1 && b != b1 || !bool1 && !(!in_area1))');
         test_parse_valid('( a==a1 ) || b != b1 && ( a==a2 ||\n b!=b1 && (a==a1 || b == b2)) && a == a1');
         test_parse_valid('num1 > 0.3 && bool1 != true || a == a2 && num2 > 0.5 || bool1 == false');
         test_parse_valid('num1>0.3 && num2<12 || num1>=0.5 && num2<=1.3');
@@ -162,6 +175,10 @@ describe("parse", () => {
         test_parse(' == bool1', `unexpected token '=='`, [1, 3], allowedLefts);
         test_parse('bool1 != a2', `invalid bool1: 'a2'`, [9, 11], ['true', 'false']);
         test_parse('in_area1 == tru || a == a1', `invalid in_area1: 'tru'`, [12, 15], ['true', 'false']);
+        test_parse('!a', `unexpected token after negation operator 'a'`, [1, 2], ['bool1', 'bool2', 'in_area1', 'in_area2', 'in_area3']);
+        test_parse('!num2 > 0.5', `unexpected token after negation operator 'num2'`, [1, 5], ['bool1', 'bool2', 'in_area1', 'in_area2', 'in_area3']);
+        test_parse('bool1 !', `unexpected token '!'`, [6, 7], ['||', '&&']);
+        test_parse('!bool1 == true', `unexpected token '=='`, [7, 9], ['||', '&&']); // this would be valid in Java, but since it is rather useless we do not handle this case
     });
 
     test("parse, includes tokens", () => {

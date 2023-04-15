@@ -3,7 +3,8 @@ import {completeCondition as complete} from './complete';
 const categories = {
     'a': {type: 'enum', values: ['a1a', 'a1b', 'a2a', 'a2b']},
     'b': {type: 'enum', values: ['b1', 'b2']},
-    'c': {type: 'numeric'}
+    'c': {type: 'numeric'},
+    'd': {type: 'boolean'}
 };
 const areas = ['pqr', 'xyz'];
 
@@ -12,16 +13,17 @@ describe("complete", () => {
         test_complete('a == ', 5, ['a1a', 'a1b', 'a2a', 'a2b'], [5, 5]);
         test_complete('b == ', 5, ['b1', 'b2'], [5, 5]);
         test_complete('b ==       ', 5, ['b1', 'b2'], [5, 5]);
-        test_complete('', 12, ['a', 'b', 'c', 'in_pqr', 'in_xyz', 'true', 'false'], [12, 12]);
-        test_complete('  ', 12, ['a', 'b', 'c', 'in_pqr', 'in_xyz', 'true', 'false'], [12, 12]);
-        test_complete('\t\n', 12, ['a', 'b', 'c', 'in_pqr', 'in_xyz', 'true', 'false'], [12, 12]);
-        test_complete('    ', 0, ['a', 'b', 'c', 'in_pqr', 'in_xyz', 'true', 'false'], [0, 0]);
-        test_complete('    ', 1, ['a', 'b', 'c', 'in_pqr', 'in_xyz', 'true', 'false'], [1, 1]);
-        test_complete('    ', 2, ['a', 'b', 'c', 'in_pqr', 'in_xyz', 'true', 'false'], [2, 2]);
+        test_complete('', 12, ['a', 'b', 'c', 'd', 'in_pqr', 'in_xyz', 'true', 'false'], [12, 12]);
+        test_complete('  ', 12, ['a', 'b', 'c', 'd', 'in_pqr', 'in_xyz', 'true', 'false'], [12, 12]);
+        test_complete('\t\n', 12, ['a', 'b', 'c', 'd', 'in_pqr', 'in_xyz', 'true', 'false'], [12, 12]);
+        test_complete('    ', 0, ['a', 'b', 'c', 'd', 'in_pqr', 'in_xyz', 'true', 'false'], [0, 0]);
+        test_complete('    ', 1, ['a', 'b', 'c', 'd', 'in_pqr', 'in_xyz', 'true', 'false'], [1, 1]);
+        test_complete('    ', 2, ['a', 'b', 'c', 'd', 'in_pqr', 'in_xyz', 'true', 'false'], [2, 2]);
         test_complete('b == ', 4, ['b1', 'b2'], [4, 4]);
         test_complete('b ==', 4, ['b1', 'b2'], [4, 4]);
         test_complete('b ==', 9, ['b1', 'b2'], [9, 9]);
         test_complete('b == ', 9, ['b1', 'b2'], [9, 9]);
+        test_complete('!', 3, ['d', 'in_pqr', 'in_xyz'], [3, 3]);
     });
 
     test("complete at end of condition, incomplete token", () => {
@@ -31,6 +33,8 @@ describe("complete", () => {
         test_complete('a == x1    ', 7, [], null);
         // here we get no suggestions, because the 'previous' term is invalid (we evaluate 'a == a1 x')
         test_complete('a == a1    ', 8, [], null);
+        test_complete('!in', 2, ['in_pqr', 'in_xyz'], [1, 3]);
+        test_complete('!(in', 3, ['in_pqr', 'in_xyz'], [2, 4]);
     });
 
     test("complete at end of condition, with previous error", () => {
@@ -55,7 +59,7 @@ describe("complete", () => {
     });
 
     test("complete at token within condition", () => {
-        test_complete('a == a1a && b != b1', 0, ['a', 'b', 'c', 'in_pqr', 'in_xyz', 'true', 'false'], [0, 1]);
+        test_complete('a == a1a && b != b1', 0, ['a', 'b', 'c', 'd', 'in_pqr', 'in_xyz', 'true', 'false'], [0, 1]);
         test_complete('a == a1a && b != b2', 2, ['==', '!='], [2, 4]);
         test_complete('a == a1b && b == b1', 5, ['a1a', 'a1b', 'a2a', 'a2b'], [5, 8]);
         test_complete('a == a2a && b == b2', 6, ['a1a', 'a1b', 'a2a', 'a2b'], [5, 8]);

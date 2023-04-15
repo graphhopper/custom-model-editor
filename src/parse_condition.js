@@ -31,14 +31,17 @@ function parse(condition, categories, areas) {
  * Parses a given list of tokens according to the following grammar.
  *
  * condition -> comparison (logicOperator comparison)*
- * comparison -> enumCategory comparator value | numericCategory numericComparator number | boolean | booleanCategory |
- *               booleanCategory comparator boolean | 'in_' area | 'in_' area comparator boolean | '(' condition ')'
+ * comparison -> enumCategory comparator value | numericCategory numericComparator number |
+ *               booleanCategory comparator boolean | 'in_' area comparator boolean |
+ *               '(' condition ')' | '!' '(' condition ')' |
+ *               atomicCondition | '!' atomicCondition |
+ * atomicCondition -> booleanLiteral | booleanCategory | 'in_' area | '!' atomicCondition
  * logicOperator -> '&&' | '||'
  * comparator -> '==' | '!='
  * numericComparator -> '>' | '<' | '>=' | '<=' | '==' | '!='
  * value -> string
  * number -> number
- * boolean -> 'true' | 'false'
+ * booleanLiteral -> 'true' | 'false'
  *
  * Note that we do not care about operator precedence between && and || because our aim is not
  * actually evaluating the condition, but rather checking the validity.
@@ -108,6 +111,8 @@ function parseComparison() {
         return parseBooleanComparison();
     } else if (isArea()) {
         return parseArea();
+    } else if (isNegation()) {
+        return parseNegation();
     } else if (isOpening()) {
         return parseConditionInParentheses();
     } else if (finished()) {
@@ -214,6 +219,26 @@ function parseTripleComparison(allowedComparators, isValid, getAllowedValues) {
     return valid();
 }
 
+function parseNegation() {
+    const from = _idx;
+    _idx++;
+    if (finished())
+        return error(`missing condition after negation operator '!'`, [from, _idx],  Object.entries(_categories).filter(([, v]) => v.type === 'boolean').map(([k]) => k).concat(_areas.map(a => 'in_' + a)));
+    if (isNegation())
+        return parseNegation();
+    // rule: comparison -> '!' atomicCondition
+    if (isBooleanCategory() || isBooleanLiteral() || isArea()) {
+        _idx++;
+        return valid();
+    }
+
+    // rule: comparison -> '!' '(' condition ')'
+    if (isOpening())
+        return parseConditionInParentheses();
+
+    return error(`unexpected token after negation operator '${_tokens[_idx]}'`, [_idx, _idx + 1], Object.entries(_categories).filter(([, v]) => v.type === 'boolean').map(([k]) => k).concat(_areas.map(a => 'in_' + a)));
+}
+
 function parseConditionInParentheses() {
     // rule: comparison -> '(' condition ')'
     const from = _idx;
@@ -270,6 +295,10 @@ function isCategory() {
 
 function isCategoryValue(category, value) {
     return _categories[category].values.indexOf(value) >= 0;
+}
+
+function isNegation() {
+    return _tokens[_idx] === '!';
 }
 
 function isOpening() {

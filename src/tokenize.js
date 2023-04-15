@@ -1,5 +1,5 @@
 /** Symbols used for the tokenization */
-const conditionSingleCharSymbols = ['(', ')', '<', '>'];
+const conditionSingleCharSymbols = ['(', ')', '<', '>', '!'];
 const conditionDoubleCharSymbols = ['||', '&&', '==', '!=', '<=', '>='];
 const operatorValueSingleCharSymbols = ['*', '/', '+', '-'];
 const operatorValueDoubleCharSymbols = [];
