@@ -28,7 +28,7 @@ export function completeJson(content, pos) {
         /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object(-property|-property-key)?$/.test(signatureString)
     ) {
         const clauses = ['"if"', '"else_if"', '"else"'];
-        const operators = ['"limit_to"', '"multiply_by"'];
+        const operators = ['"limit_to"', '"multiply_by"', '"add"'];
         const hasClause = jsonPath.signature.length > 4 && keysAlreadyExistInOtherPairs(jsonPath.path[3].children, jsonPath.path[4], clauses);
         const hasOperator = jsonPath.signature.length > 4 && keysAlreadyExistInOtherPairs(jsonPath.path[3].children, jsonPath.path[4], operators);
         let suggestions = [];
