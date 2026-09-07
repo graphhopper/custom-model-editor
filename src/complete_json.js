@@ -1,5 +1,8 @@
 import {findNodeAtOffset, parseTree} from "jsonc-parser";
 
+// matches the signature of a statement (object) in one of the statement lists, including the ones nested in 'do' blocks
+const statementPrefix = '^root-object-property\\[(speed|priority|turn_penalty)]-array\\[[0-9]+](-object-property\\[do]-array\\[[0-9]+])*';
+
 /**
  * Returns auto-complete suggestions for a json string and a given character position
  */
@@ -25,15 +28,19 @@ export function completeJson(content, pos) {
             range: jsonPath.tokenRange
         }
     } else if (
-        /^root-object-property\[(speed|priority|turn_penalty)]-array\[[0-9]+]-object(-property|-property-key)?$/.test(signatureString)
+        new RegExp(statementPrefix + '-object(-property|-property-key)?$').test(signatureString)
     ) {
         const clauses = ['"if"', '"else_if"', '"else"'];
-        // 'add' is only allowed for turn_penalty, while speed and priority use 'limit_to' and 'multiply_by'
+        // 'add' is only allowed for turn_penalty, while speed and priority use 'limit_to' and 'multiply_by' or a 'do' block
         const operators = jsonPath.signature[2] === 'property[turn_penalty]'
             ? ['"add"']
-            : ['"limit_to"', '"multiply_by"'];
-        const hasClause = jsonPath.signature.length > 4 && keysAlreadyExistInOtherPairs(jsonPath.path[3].children, jsonPath.path[4], clauses);
-        const hasOperator = jsonPath.signature.length > 4 && keysAlreadyExistInOtherPairs(jsonPath.path[3].children, jsonPath.path[4], operators);
+            : ['"limit_to"', '"multiply_by"', '"do"'];
+        // the statement object is the last 'object' in the signature, the (optional) property we are in comes right after it
+        const objectIdx = jsonPath.signature.lastIndexOf('object') - 1;
+        const statement = jsonPath.path[objectIdx];
+        const thisPair = jsonPath.path[objectIdx + 1];
+        const hasClause = keysAlreadyExistInOtherPairs(statement.children, thisPair, clauses);
+        const hasOperator = keysAlreadyExistInOtherPairs(statement.children, thisPair, operators);
         let suggestions = [];
         if (!hasClause)
             suggestions.push(...clauses);
@@ -44,24 +51,31 @@ export function completeJson(content, pos) {
             range: jsonPath.signature[jsonPath.signature.length - 1] === 'key' ? jsonPath.tokenRange : [pos, pos + 1]
         }
     } else if (
-        /^root-object-property\[(speed|priority|turn_penalty)]-array\[[0-9]+]-object-property\[(else)]-value$/.test(signatureString)
+        new RegExp(statementPrefix + '-object-property\\[(else)]-value$').test(signatureString)
     ) {
         return {
             suggestions: ['""'],
             range: [pos, pos + 2]
         }
     } else if (
-        /^root-object-property\[(speed|priority|turn_penalty)]-array\[[0-9]+]-object-property\[(if|else_if)]-value$/.test(signatureString)
+        new RegExp(statementPrefix + '-object-property\\[(if|else_if)]-value$').test(signatureString)
     ) {
         return {
             suggestions: ['__hint__type a condition'],
             range: jsonPath.tokenRange
         }
     } else if (
-        /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object-property\[(limit_to|multiply_by)]-value$|^root-object-property\[turn_penalty]-array\[[0-9]+]-object-property\[add]-value$/.test(signatureString)
+        new RegExp(statementPrefix + '-object-property\\[(limit_to|multiply_by|add)]-value$').test(signatureString)
     ) {
         return {
             suggestions: ['__hint__type an expression'],
+            range: jsonPath.tokenRange
+        }
+    } else if (
+        new RegExp(statementPrefix + '-object-property\\[do]-value$').test(signatureString)
+    ) {
+        return {
+            suggestions: ['__hint__type an array of statements'],
             range: jsonPath.tokenRange
         }
     } else if (

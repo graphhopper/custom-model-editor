@@ -107,10 +107,10 @@ describe('validate_json', () => {
             `speed[0]: must be an object. given type: string, range: [11, 16]`
         ]);
         test_validate(`{"speed": \n[{"abc": "def"}]}`, [
-            `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to']. given: 'abc', range: [13, 18]`
+            `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to', 'do']. given: 'abc', range: [13, 18]`
         ]);
         test_validate(`{"speed": [{"multiply_by": "0.9", "ele": "bla"}]}`, [
-            `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to']. given: 'ele', range: [34, 39]`
+            `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to', 'do']. given: 'ele', range: [34, 39]`
         ]);
         test_validate(`{"priority": [{"if": "condition", "else": null, "multiply_by": "0.3"}]}`, [
             `priority[0]: too many keys. maximum: 2. given: else,if,multiply_by, range: [14, 69]`
@@ -122,10 +122,10 @@ describe('validate_json', () => {
             `priority[0]: every statement must have a clause ['if', 'else_if', 'else']. given: limit_to,multiply_by, range: [14, 55]`
         ]);
         test_validate(`{"priority": [{"if": "condition1", "else_if": "condition2"}]}`, [
-            `priority[0]: every statement must have an operator ['multiply_by', 'limit_to']. given: if,else_if, range: [14, 59]`
+            `priority[0]: every statement must have an operator ['multiply_by', 'limit_to'] or a 'do' block. given: if,else_if, range: [14, 59]`
         ]);
         test_validate(`{"priority": [{"if": "condition1", "limit_to": "100"}, {"if": "condition2"}]}`, [
-            `priority[1]: every statement must have an operator ['multiply_by', 'limit_to']. given: if, range: [55, 75]`
+            `priority[1]: every statement must have an operator ['multiply_by', 'limit_to'] or a 'do' block. given: if, range: [55, 75]`
         ]);
         test_validate(`{"speed": [ "if": "condition", "limit_to": "100" ]}`, [
             `speed[0]: must be an object. given type: string, range: [12, 16]`,
@@ -227,8 +227,35 @@ describe('validate_json', () => {
             `turn_penalty[0]: every statement must have an operator ['add']. given: if, range: [18, 37]`
         ]);
         test_validate(`{"speed": [{"if": "condition", "add": "3"}]}`, [
-            `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to']. given: 'add', range: [31, 36]`
+            `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to', 'do']. given: 'add', range: [31, 36]`
         ]);
+    });
+
+    test('do blocks contain nested statements', () => {
+        test_validate(`{"speed": [{"if": "cond1", "do": [{"if": "cond2", "limit_to": "30"}, {"else": "", "do": [{"if": "cond3", "multiply_by": "0.5"}]}]}]}`, []);
+        test_validate(`{"priority": [{"if": "cond", "do": []}]}`, []);
+        test_validate(`{"speed": [{"if": "cond", "do": {}}]}`, [
+            `speed[0][do]: must be an array. given type: object, range: [32, 34]`
+        ]);
+        test_validate(`{"speed": [{"if": "cond", "do": [], "limit_to": "30"}]}`, [
+            `speed[0]: too many keys. maximum: 2. given: do,if,limit_to, range: [11, 53]`
+        ]);
+        test_validate(`{"speed": [{"if": "cond", "do": [{"else_if": "cond2", "limit_to": "30"}]}]}`, [
+            `speed[0][do][0]: 'else_if' clause must be preceded by 'if' or 'else_if', range: [33, 71]`
+        ]);
+        test_validate(`{"speed": [{"if": "cond", "do": [{"if": "cond2", "add": "30"}]}]}`, [
+            `speed[0][do][0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to', 'do']. given: 'add', range: [49, 54]`
+        ]);
+        test_validate(`{"turn_penalty": [{"if": "cond", "do": []}]}`, [
+            `turn_penalty[0]: possible keys: ['if', 'else_if', 'else', 'add']. given: 'do', range: [33, 37]`
+        ]);
+    });
+
+    test('nested condition and operator value ranges are returned', () => {
+        const res = validateJson(`{"speed": [{"if": "cond1", "do": [{"if": "cond2", "limit_to": "30"}]}]}`);
+        expect(res.errors).toStrictEqual([]);
+        expect(res.conditionRanges).toStrictEqual([[18, 25], [41, 48]]);
+        expect(res.operatorValueRanges).toStrictEqual([[62, 66]]);
     });
 
     test('parameters map names to numbers or booleans', () => {
