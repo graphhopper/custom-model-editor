@@ -1,7 +1,7 @@
 import {completeJson, getJsonPath} from "./complete_json"
 
 const rootElements = [`"speed"`, `"priority"`, `"distance_influence"`, `"areas"`, `"turn_penalty"`, `"parameters"`];
-const statementElements = [`"if"`, `"else_if"`, `"else"`, `"limit_to"`, `"multiply_by"`];
+const statementElements = [`"if"`, `"else_if"`, `"else"`, `"limit_to"`, `"multiply_by"`, `"do"`];
 
 describe('complete_json', () => {
     test('root elements', () => {
@@ -26,8 +26,11 @@ describe('complete_json', () => {
         test_complete(`{"priority": [ {}, { "x"`, 21, statementElements, [21, 24]);
         test_complete(`{"speed": [ { "a": "b", "x"`, 25, statementElements, [24, 27]);
         test_complete(`{"priority": [ {"if": "abc", "limit_to": 30}, { `, 48, statementElements, [48, 49]);
-        test_complete(`{"priority": [ {"if": "abc",         `, 30, [`"limit_to"`, `"multiply_by"`], [30, 31]);
-        test_complete(`{"priority": [ {"if": "abc", "xyz123"`, 30, [`"limit_to"`, `"multiply_by"`], [29, 37]);
+        test_complete(`{"priority": [ {"if": "abc",         `, 30, [`"limit_to"`, `"multiply_by"`, `"do"`], [30, 31]);
+        test_complete(`{"priority": [ {"if": "abc", "xyz123"`, 30, [`"limit_to"`, `"multiply_by"`, `"do"`], [29, 37]);
+        test_complete(`{"priority": [ {"if": "abc", "do": `, 34, [`__hint__type an array of statements`], [34, 35]);
+        test_complete(`{"priority": [ {"if": "abc", "do": [{"x"`, 38, statementElements, [37, 40]);
+        test_complete(`{"priority": [ {"if": "abc", "do": [{"if": "x"`, 44, [`__hint__type a condition`], [43, 46]);
         test_complete(`{"priority":  [ {"limit_to": 100, "xyz123"`, 35, [`"if"`, `"else_if"`, `"else"`], [34, 42]);
         test_complete(`{"turn_penalty": [ { "x"`, 22, [`"if"`, `"else_if"`, `"else"`, `"add"`], [21, 24]);
         test_complete(`{"turn_penalty": [ {"if": "abc",         `, 37, [`"add"`], [37, 38]);

@@ -26,7 +26,8 @@ let _parameters = {};
  * parameters: object, optional, not null
  *
  * the speed/priority/turn_penalty array objects must contain a cause that can be either 'if', 'else_if' or 'else' and
- * an operator that can be 'multiply_by' or 'limit_to' (speed and priority) or 'add' (turn_penalty)
+ * an operator that can be 'multiply_by' or 'limit_to' (speed and priority) or 'add' (turn_penalty). for speed and
+ * priority the operator can be replaced by a 'do' block, i.e. an array of (nested) statements
  *
  * the clause value, called the 'condition', must be a string unless the clause is 'else' in which case the value must be null
  * the operator value must be either a number (legacy) or a string
@@ -105,7 +106,7 @@ function validateRootKeyValuePair(path, key, value) {
     if (isJsonNull(value)) {
         return [error(`${key.value}`, `must not be null`, getRange(value))];
     } else if (key.value === 'speed' || key.value === 'priority' || key.value === 'turn_penalty') {
-        return validateStatements(key.value, value);
+        return validateStatements(key.value, value, operatorsPerSection[key.value], key.value !== 'turn_penalty');
     } else if (key.value === 'distance_influence') {
         return validateDistanceInfluence(value);
     } else if (key.value === 'areas') {
@@ -117,10 +118,13 @@ function validateRootKeyValuePair(path, key, value) {
     }
 }
 
-function validateStatements(key, itemsObj) {
-    const operators = operatorsPerSection[key];
+/**
+ * Validates a list of statements, also the nested ones inside 'do' blocks in which case the path is something like
+ * speed[0][do]. Blocks are only allowed if allowBlocks is true.
+ */
+function validateStatements(key, itemsObj, operators, allowBlocks) {
     const errors = validateList(key, itemsObj, 0, -1,
-        (path, statementItem, statementIndex) => validateStatement(path, statementItem, statementIndex, operators));
+        (path, statementItem, statementIndex) => validateStatement(path, statementItem, statementIndex, operators, allowBlocks));
     if (errors.length > 0)
         return errors;
 
@@ -143,28 +147,31 @@ function validateStatements(key, itemsObj) {
     return errors;
 }
 
-function validateStatement(path, statementItem, statementIndex, operators) {
-    const statementKeys = clauses.concat(operators);
+function validateStatement(path, statementItem, statementIndex, operators, allowBlocks) {
+    const statementKeys = clauses.concat(operators).concat(allowBlocks ? ['do'] : []);
     const message = `possible keys: ${displayList(statementKeys)}`;
     const keyIsValid = (key) => statementKeys.indexOf(key.value) >= 0;
     return validateObject(path, statementItem,
-        keyIsValid, (path, keys, range) => validateStatementKeyConstraints(path, keys, range, operators), message, validateStatementValue);
+        keyIsValid, (path, keys, range) => validateStatementKeyConstraints(path, keys, range, operators, allowBlocks), message,
+        (path, key, value) => validateStatementValue(path, key, value, operators, allowBlocks));
 }
 
-function validateStatementKeyConstraints(path, keys, range, operators) {
+function validateStatementKeyConstraints(path, keys, range, operators, allowBlocks) {
     const errors = [];
     if (keys.length > 2)
         errors.push(error(path, `too many keys. maximum: 2. given: ${keys.sort()}`, range));
     const hasClause = keys.some(key => clauses.indexOf(key) >= 0);
-    const hasOperator = keys.some(key => operators.indexOf(key) >= 0);
+    const hasOperator = keys.some(key => operators.indexOf(key) >= 0 || (allowBlocks && key === 'do'));
     if (!hasClause)
         errors.push(error(path, `every statement must have a clause ${displayList(clauses)}. given: ${keys}`, range));
     if (!hasOperator)
-        errors.push(error(path, `every statement must have an operator ${displayList(operators)}. given: ${keys}`, range));
+        errors.push(error(path, `every statement must have an operator ${displayList(operators)}${allowBlocks ? ` or a 'do' block` : ''}. given: ${keys}`, range));
     return errors;
 }
 
-function validateStatementValue(path, key, value) {
+function validateStatementValue(path, key, value, operators, allowBlocks) {
+    if (key.value === 'do')
+        return validateStatements(`${path}[do]`, value, operators, allowBlocks);
     const errors = [];
     const isClause = clauses.indexOf(key.value) >= 0;
     const isOperator = allOperators.indexOf(key.value) >= 0;
