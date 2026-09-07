@@ -46,10 +46,10 @@ describe('validate_json', () => {
 
     test('root keys are valid', () => {
         test_validate(`{"abc": "def"}`, [
-            `root: possible keys: ['speed', 'priority', 'distance_influence', 'areas']. given: 'abc', range: [1, 6]`
+            `root: possible keys: ['speed', 'priority', 'distance_influence', 'areas', 'turn_penalty']. given: 'abc', range: [1, 6]`
         ]);
         test_validate(`{"spee": []}`, [
-            `root: possible keys: ['speed', 'priority', 'distance_influence', 'areas']. given: 'spee', range: [1, 7]`
+            `root: possible keys: ['speed', 'priority', 'distance_influence', 'areas', 'turn_penalty']. given: 'spee', range: [1, 7]`
         ]);
     });
 
@@ -216,6 +216,19 @@ describe('validate_json', () => {
         ]);
         // multiple else_ifs are possible
         test_validate(`{"priority": [{"if": "abc", "limit_to": "60"}, {"else_if": "def", "multiply_by": "0.2"}, {"else_if": "condition", "limit_to": "100"}]}`, []);
+    });
+
+    test('turn_penalty statements only allow the add operator', () => {
+        test_validate(`{"turn_penalty": [{"if": "change_angle > 80", "add": "3"}, {"else": "", "add": "Infinity"}]}`, []);
+        test_validate(`{"turn_penalty": [{"if": "condition", "multiply_by": "0.5"}]}`, [
+            `turn_penalty[0]: possible keys: ['if', 'else_if', 'else', 'add']. given: 'multiply_by', range: [38, 51]`
+        ]);
+        test_validate(`{"turn_penalty": [{"if": "condition"}]}`, [
+            `turn_penalty[0]: every statement must have an operator ['add']. given: if, range: [18, 37]`
+        ]);
+        test_validate(`{"speed": [{"if": "condition", "add": "3"}]}`, [
+            `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to']. given: 'add', range: [31, 36]`
+        ]);
     });
 
     test('areas is an object', () => {

@@ -1,9 +1,14 @@
 import {parseTree, printParseErrorCode} from "jsonc-parser";
 
-const rootKeys = ['speed', 'priority', 'distance_influence', 'areas'];
+const rootKeys = ['speed', 'priority', 'distance_influence', 'areas', 'turn_penalty'];
 const clauses = ['if', 'else_if', 'else'];
-const operators = ['multiply_by', 'limit_to'];
-const statementKeys = clauses.concat(operators);
+// the operators that are allowed for the statements of each section
+const operatorsPerSection = {
+    'speed': ['multiply_by', 'limit_to'],
+    'priority': ['multiply_by', 'limit_to'],
+    'turn_penalty': ['add']
+};
+const allOperators = ['multiply_by', 'limit_to', 'add'];
 
 let _conditionRanges = [];
 let _operatorValueRanges = [];
@@ -14,11 +19,12 @@ let _areas = [];
  *
  * speed: array<{clause: string, operator: value}>, optional, not null
  * priority: array<{clause: string, operator: value}>, optional, not null
+ * turn_penalty: array<{clause: string, operator: value}>, optional, not null
  * distance_influence: number, optional, not null
  * areas: object, optional, not null
  *
- * the speed/priority array objects must contain a cause that can be either 'if', 'else_if' or 'else' and
- * an operator that can be 'multiply_by' or 'limit_to'
+ * the speed/priority/turn_penalty array objects must contain a cause that can be either 'if', 'else_if' or 'else' and
+ * an operator that can be 'multiply_by' or 'limit_to' (speed and priority) or 'add' (turn_penalty)
  *
  * the clause value, called the 'condition', must be a string unless the clause is 'else' in which case the value must be null
  * the operator value must be either a number (legacy) or a string
@@ -90,7 +96,7 @@ function validateRoot(root) {
 function validateRootKeyValuePair(path, key, value) {
     if (isJsonNull(value)) {
         return [error(`${key.value}`, `must not be null`, getRange(value))];
-    } else if (key.value === 'speed' || key.value === 'priority') {
+    } else if (key.value === 'speed' || key.value === 'priority' || key.value === 'turn_penalty') {
         return validateStatements(key.value, value);
     } else if (key.value === 'distance_influence') {
         return validateDistanceInfluence(value);
@@ -102,7 +108,9 @@ function validateRootKeyValuePair(path, key, value) {
 }
 
 function validateStatements(key, itemsObj) {
-    const errors = validateList(key, itemsObj, 0, -1, validateStatement);
+    const operators = operatorsPerSection[key];
+    const errors = validateList(key, itemsObj, 0, -1,
+        (path, statementItem, statementIndex) => validateStatement(path, statementItem, statementIndex, operators));
     if (errors.length > 0)
         return errors;
 
@@ -125,14 +133,15 @@ function validateStatements(key, itemsObj) {
     return errors;
 }
 
-function validateStatement(path, statementItem, statementIndex) {
+function validateStatement(path, statementItem, statementIndex, operators) {
+    const statementKeys = clauses.concat(operators);
     const message = `possible keys: ${displayList(statementKeys)}`;
     const keyIsValid = (key) => statementKeys.indexOf(key.value) >= 0;
     return validateObject(path, statementItem,
-        keyIsValid, validateStatementKeyConstraints, message, validateStatementValue);
+        keyIsValid, (path, keys, range) => validateStatementKeyConstraints(path, keys, range, operators), message, validateStatementValue);
 }
 
-function validateStatementKeyConstraints(path, keys, range) {
+function validateStatementKeyConstraints(path, keys, range, operators) {
     const errors = [];
     if (keys.length > 2)
         errors.push(error(path, `too many keys. maximum: 2. given: ${keys.sort()}`, range));
@@ -148,7 +157,7 @@ function validateStatementKeyConstraints(path, keys, range) {
 function validateStatementValue(path, key, value) {
     const errors = [];
     const isClause = clauses.indexOf(key.value) >= 0;
-    const isOperator = operators.indexOf(key.value) >= 0;
+    const isOperator = allOperators.indexOf(key.value) >= 0;
     if (isClause) {
         if (key.value === 'else') {
             if (!(isJsonString(value) && value.value === '')) {
