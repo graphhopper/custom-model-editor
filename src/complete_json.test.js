@@ -1,6 +1,6 @@
 import {completeJson, getJsonPath} from "./complete_json"
 
-const rootElements = [`"speed"`, `"priority"`, `"distance_influence"`, `"areas"`, `"turn_penalty"`];
+const rootElements = [`"speed"`, `"priority"`, `"distance_influence"`, `"areas"`, `"turn_penalty"`, `"parameters"`];
 const statementElements = [`"if"`, `"else_if"`, `"else"`, `"limit_to"`, `"multiply_by"`];
 
 describe('complete_json', () => {
@@ -46,6 +46,8 @@ describe('complete_json', () => {
         test_complete(`{"distance_influence": "x`, 23, [`__hint__type a number`], [23, 25]);
         test_complete(`{"distance_influence": "x", "speed": []`, 23, [`__hint__type a number`], [23, 26]);
         test_complete(`{"distance_influence": 123, "speed": []`, 23, [`__hint__type a number`], [23, 26]);
+        test_complete(`{"parameters": {"x"`, 17, [`__hint__type a parameter name`], [16, 19]);
+        test_complete(`{"parameters": {"max_weight": 5`, 30, [`__hint__type a number or boolean`], [30, 31]);
     });
 
     test(`areas`, () => {

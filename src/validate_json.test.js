@@ -46,10 +46,10 @@ describe('validate_json', () => {
 
     test('root keys are valid', () => {
         test_validate(`{"abc": "def"}`, [
-            `root: possible keys: ['speed', 'priority', 'distance_influence', 'areas', 'turn_penalty']. given: 'abc', range: [1, 6]`
+            `root: possible keys: ['speed', 'priority', 'distance_influence', 'areas', 'turn_penalty', 'parameters']. given: 'abc', range: [1, 6]`
         ]);
         test_validate(`{"spee": []}`, [
-            `root: possible keys: ['speed', 'priority', 'distance_influence', 'areas', 'turn_penalty']. given: 'spee', range: [1, 7]`
+            `root: possible keys: ['speed', 'priority', 'distance_influence', 'areas', 'turn_penalty', 'parameters']. given: 'spee', range: [1, 7]`
         ]);
     });
 
@@ -228,6 +228,19 @@ describe('validate_json', () => {
         ]);
         test_validate(`{"speed": [{"if": "condition", "add": "3"}]}`, [
             `speed[0]: possible keys: ['if', 'else_if', 'else', 'multiply_by', 'limit_to']. given: 'add', range: [31, 36]`
+        ]);
+    });
+
+    test('parameters map names to numbers or booleans', () => {
+        const res = validateJson(`{"parameters": {"max_weight": 5, "avoid_hills": true}}`);
+        expect(res.errors).toStrictEqual([]);
+        expect(res.parameters).toStrictEqual({max_weight: 'numeric', avoid_hills: 'boolean'});
+        test_validate(`{"parameters": {"weight": "5", "height": {"value": 3}}}`, [
+            `parameters[weight]: must be a number or a boolean. given type: string, range: [26, 29]`,
+            `parameters[height]: must be a number or a boolean. given type: object, range: [41, 53]`
+        ]);
+        test_validate(`{"parameters": []}`, [
+            `parameters: must be an object. given type: array, range: [15, 17]`
         ]);
     });
 

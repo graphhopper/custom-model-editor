@@ -11,7 +11,7 @@ export function completeJson(content, pos) {
     if (
         /^root-object(-property|-property-key)?$/.test(signatureString)
     ) {
-        let suggestions = ['"speed"', '"priority"', '"distance_influence"', '"areas"', '"turn_penalty"']
+        let suggestions = ['"speed"', '"priority"', '"distance_influence"', '"areas"', '"turn_penalty"', '"parameters"']
             .filter(s => !keyAlreadyExistsInOtherPairs(jsonPath.path[0].children, jsonPath.path[1], s));
         return {
             suggestions,
@@ -62,6 +62,27 @@ export function completeJson(content, pos) {
     ) {
         return {
             suggestions: ['__hint__type an expression'],
+            range: jsonPath.tokenRange
+        }
+    } else if (
+        /^root-object-property\[parameters]-value$/.test(signatureString)
+    ) {
+        return {
+            suggestions: [` {\n    "parameter_name": 1\n  }`],
+            range: jsonPath.tokenRange
+        }
+    } else if (
+        /^root-object-property\[parameters]-object(-property-key)?$/.test(signatureString)
+    ) {
+        return {
+            suggestions: ['__hint__type a parameter name'],
+            range: jsonPath.signature[jsonPath.signature.length - 1] === 'key' ? jsonPath.tokenRange : [pos, pos + 1]
+        }
+    } else if (
+        /^root-object-property\[parameters]-object-property\[[^\]]*]-value$/.test(signatureString)
+    ) {
+        return {
+            suggestions: ['__hint__type a number or boolean'],
             range: jsonPath.tokenRange
         }
     } else if (
