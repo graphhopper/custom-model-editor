@@ -28,7 +28,6 @@ export function completeJson(content, pos) {
         /^root-object-property\[(speed|priority|turn_penalty)]-array\[[0-9]+]-object(-property|-property-key)?$/.test(signatureString)
     ) {
         const clauses = ['"if"', '"else_if"', '"else"'];
-        // 'add' is only allowed for turn_penalty, while speed and priority use 'limit_to' and 'multiply_by'
         const operators = jsonPath.signature[2] === 'property[turn_penalty]'
             ? ['"add"']
             : ['"limit_to"', '"multiply_by"'];
