@@ -50,6 +50,16 @@ describe('complete_json', () => {
         test_complete(`{"parameters": {"max_weight": 5`, 30, [`__hint__type a number or boolean`], [30, 31]);
     });
 
+    test(`parameters, known`, () => {
+        const known = {weight: {value: 5, min: 0, max: 40}, height: {value: 3.5}, avoid_hills: {value: false}};
+        test_complete_known(`{"parameters": {"weight": 5, "x"`, 30, known, [`"height"`, `"avoid_hills"`], [29, 32]);
+        test_complete_known(`{"parameters": {"weight": 5`, 26, known, [`5`, `__hint__type a number within [0, 40]`], [26, 27]);
+        test_complete_known(`{"parameters": {"height": 5`, 26, known, [`3.5`, `__hint__type a number >= 0`], [26, 27]);
+        test_complete_known(`{"parameters": {"avoid_hills": 5`, 31, known, [`true`, `false`], [31, 32]);
+        test_complete_known(`{"parameters": `, 15, known, [` {\n    "weight": 5,\n    "height": 3.5,\n    "avoid_hills": false\n  }`], [14, 16]);
+        test_complete_known(`{"parameters": {"x"`, 17, {}, [`__hint__no parameters can be overridden for this profile`], [16, 19]);
+    });
+
     test(`areas`, () => {
         test_complete(`{"areas": {  "x"`, 14, [`"type"`, `"features"`], [13, 16]);
         test_complete(`{"areas": {  "x", "type": "FeatureCollection"`, 14, [`"features"`], [13, 16]);
@@ -79,6 +89,17 @@ function test_complete(content, pos, suggestions, range) {
         expect(result.range).toStrictEqual(range);
     } catch (e) {
         Error.captureStackTrace(e, test_complete);
+        throw e;
+    }
+}
+
+function test_complete_known(content, pos, knownParameters, suggestions, range) {
+    const result = completeJson(content, pos, knownParameters);
+    try {
+        expect(result.suggestions).toStrictEqual(suggestions);
+        expect(result.range).toStrictEqual(range);
+    } catch (e) {
+        Error.captureStackTrace(e, test_complete_known);
         throw e;
     }
 }

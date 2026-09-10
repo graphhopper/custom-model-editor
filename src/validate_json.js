@@ -1,4 +1,5 @@
 import {parseTree, printParseErrorCode} from "jsonc-parser";
+import {displayRange, getParameterRange, getParameterType} from "./parameters";
 
 const rootKeys = ['speed', 'priority', 'distance_influence', 'areas', 'turn_penalty', 'parameters'];
 const clauses = ['if', 'else_if', 'else'];
@@ -14,6 +15,7 @@ let _conditionRanges = [];
 let _operatorValueRanges = [];
 let _areas = [];
 let _parameters = {};
+let _knownParameters = null;
 
 /**
  * Checks that a given json string follows this schema:
@@ -33,7 +35,9 @@ let _parameters = {};
  *
  * 'else_if' and 'else' clauses must be preceded by an 'if' or 'else_if' clause
  *
- * the parameters object maps parameter names to a number or a boolean
+ * the parameters object maps parameter names to a number or a boolean. if knownParameters (the parameters of the
+ * server-side custom model, see parameters.js) is given, the names must be known and the values must match their type
+ * and range, otherwise any name is accepted
  *
  * This method returns an object containing:
  *
@@ -48,11 +52,12 @@ let _parameters = {};
  * - areas: the list of area names used in the document
  * - parameters: an object that maps the parameter names defined in the document to their type ('numeric' or 'boolean')
  */
-export function validateJson(json) {
+export function validateJson(json, knownParameters) {
     _conditionRanges = [];
     _operatorValueRanges = [];
     _areas = [];
     _parameters = {};
+    _knownParameters = knownParameters === undefined ? null : knownParameters;
 
     if (json.trim().length === 0)
         return {
@@ -202,11 +207,32 @@ function validateDistanceInfluence(value) {
 }
 
 function validateParameters(parameters) {
-    // the parameter names are defined on the server-side and are not known here, so we accept any name
-    return validateObject('parameters', parameters, () => true, () => [], '', validateParameter);
+    if (_knownParameters === null)
+        return validateObject('parameters', parameters, () => true, () => [], '', validateParameter);
+    const knownNames = Object.keys(_knownParameters);
+    const keyIsValid = (key) => knownNames.indexOf(key.value) >= 0;
+    const message = knownNames.length === 0
+        ? `no parameters can be overridden for this profile`
+        : `possible keys: ${displayList(knownNames)}`;
+    return validateObject('parameters', parameters, keyIsValid, () => [], message, validateParameter);
 }
 
 function validateParameter(path, key, value) {
+    const known = _knownParameters === null ? undefined : _knownParameters[key.value];
+    if (known !== undefined) {
+        const type = getParameterType(known);
+        if (type === 'boolean' && !isJsonBoolean(value))
+            return [error(`${path}[${key.value}]`, `must be a boolean like the server-side value (${known.value}). given type: ${displayType(value)}`, getRange(value))];
+        if (type === 'numeric' && !isJsonNumber(value))
+            return [error(`${path}[${key.value}]`, `must be a number like the server-side value (${known.value}). given type: ${displayType(value)}`, getRange(value))];
+        if (type === 'numeric') {
+            const [min, max] = getParameterRange(known);
+            if (value.value < min || value.value > max)
+                return [error(`${path}[${key.value}]`, `must be ${displayRange(min, max)}. given: ${value.value}`, getRange(value))];
+        }
+        _parameters[key.value] = type;
+        return [];
+    }
     if (isJsonNumber(value)) {
         _parameters[key.value] = 'numeric';
         return [];

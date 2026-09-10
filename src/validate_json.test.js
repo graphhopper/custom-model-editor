@@ -244,6 +244,26 @@ describe('validate_json', () => {
         ]);
     });
 
+    test('parameters are validated against the known parameters', () => {
+        const known = {weight: {value: 5, min: 0, max: 40}, height: {value: 3.5}, avoid_hills: {value: false}};
+        test_validate_known(`{"parameters": {"weight": 40, "height": 2, "avoid_hills": true}}`, known, []);
+        test_validate_known(`{"parameters": {"width": 10}}`, known, [
+            `parameters: possible keys: ['weight', 'height', 'avoid_hills']. given: 'width', range: [16, 23]`
+        ]);
+        test_validate_known(`{"parameters": {"weight": true, "avoid_hills": 1}}`, known, [
+            `parameters[weight]: must be a number like the server-side value (5). given type: boolean, range: [26, 30]`,
+            `parameters[avoid_hills]: must be a boolean like the server-side value (false). given type: number, range: [47, 48]`
+        ]);
+        test_validate_known(`{"parameters": {"weight": 50, "height": -1}}`, known, [
+            `parameters[weight]: must be within [0, 40]. given: 50, range: [26, 28]`,
+            `parameters[height]: must be >= 0. given: -1, range: [40, 42]`
+        ]);
+        test_validate_known(`{"parameters": {"weight": 5}}`, {}, [
+            `parameters: no parameters can be overridden for this profile. given: 'weight', range: [16, 24]`
+        ]);
+        test_validate_known(`{"parameters": {"weight": 5}}`, null, []);
+    });
+
     test('areas is an object', () => {
         test_validate(`{"areas": []}`, [`areas: must be an object. given type: array, range: [10, 12]`]);
         test_validate(`{"areas": "not_an_object"}`, [`areas: must be an object. given type: string, range: [10, 25]`]);
@@ -474,6 +494,17 @@ function test_validate(doc, errors) {
         expect(errorStrings).toStrictEqual(errors);
     } catch (e) {
         Error.captureStackTrace(e, test_validate);
+        throw e;
+    }
+}
+
+function test_validate_known(doc, knownParameters, errors) {
+    const res = validateJson(doc, knownParameters);
+    const errorStrings = res.errors.map(e => `${e.path}: ${e.message}, range: [${e.range.join(', ')}]`);
+    try {
+        expect(errorStrings).toStrictEqual(errors);
+    } catch (e) {
+        Error.captureStackTrace(e, test_validate_known);
         throw e;
     }
 }
