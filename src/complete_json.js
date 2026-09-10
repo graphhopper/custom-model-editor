@@ -1,9 +1,12 @@
 import {findNodeAtOffset, parseTree} from "jsonc-parser";
+import {displayRange, getParameterRange, getParameterType} from "./parameters";
 
 /**
- * Returns auto-complete suggestions for a json string and a given character position
+ * Returns auto-complete suggestions for a json string and a given character position. If the parameters of the
+ * server-side custom model are given (see parameters.js) their names and values are suggested.
  */
-export function completeJson(content, pos) {
+export function completeJson(content, pos, parameters) {
+    const knownParameters = parameters === undefined ? null : parameters;
     // pad the content in case the position is out of range
     while (pos >= content.length) content += ' ';
     const jsonPath = getJsonPath(content, pos);
@@ -11,7 +14,7 @@ export function completeJson(content, pos) {
     if (
         /^root-object(-property|-property-key)?$/.test(signatureString)
     ) {
-        let suggestions = ['"speed"', '"priority"', '"distance_influence"', '"areas"', '"turn_penalty"']
+        let suggestions = ['"speed"', '"priority"', '"distance_influence"', '"areas"', '"turn_penalty"', '"parameters"']
             .filter(s => !keyAlreadyExistsInOtherPairs(jsonPath.path[0].children, jsonPath.path[1], s));
         return {
             suggestions,
@@ -62,6 +65,51 @@ export function completeJson(content, pos) {
     ) {
         return {
             suggestions: ['__hint__type an expression'],
+            range: jsonPath.tokenRange
+        }
+    } else if (
+        /^root-object-property\[parameters]-value$/.test(signatureString)
+    ) {
+        let suggestion;
+        if (knownParameters === null)
+            suggestion = ` {\n    "parameter_name": 1\n  }`;
+        else if (Object.keys(knownParameters).length === 0)
+            suggestion = ` {}`;
+        else
+            suggestion = ` {\n` + Object.entries(knownParameters).map(([k, v]) => `    "${k}": ${v.value}`).join(',\n') + `\n  }`;
+        return {
+            suggestions: [suggestion],
+            range: jsonPath.tokenRange
+        }
+    } else if (
+        /^root-object-property\[parameters]-object(-property-key)?$/.test(signatureString)
+    ) {
+        let suggestions;
+        if (knownParameters === null)
+            suggestions = ['__hint__type a parameter name'];
+        else if (Object.keys(knownParameters).length === 0)
+            suggestions = ['__hint__no parameters can be overridden for this profile'];
+        else
+            suggestions = Object.keys(knownParameters).map(k => `"${k}"`)
+                .filter(s => !keyAlreadyExistsInOtherPairs(jsonPath.path[2].children, jsonPath.path[3], s));
+        return {
+            suggestions,
+            range: jsonPath.signature[jsonPath.signature.length - 1] === 'key' ? jsonPath.tokenRange : [pos, pos + 1]
+        }
+    } else if (
+        /^root-object-property\[parameters]-object-property\[[^\]]*]-value$/.test(signatureString)
+    ) {
+        const name = jsonPath.path[3].children[0].value;
+        const known = knownParameters === null ? undefined : knownParameters[name];
+        let suggestions;
+        if (known === undefined)
+            suggestions = ['__hint__type a number or boolean'];
+        else if (getParameterType(known) === 'boolean')
+            suggestions = ['true', 'false'];
+        else
+            suggestions = [`${known.value}`, `__hint__type a number ${displayRange(...getParameterRange(known))}`];
+        return {
+            suggestions,
             range: jsonPath.tokenRange
         }
     } else if (

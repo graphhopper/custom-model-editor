@@ -1,6 +1,6 @@
 import {completeJson, getJsonPath} from "./complete_json"
 
-const rootElements = [`"speed"`, `"priority"`, `"distance_influence"`, `"areas"`, `"turn_penalty"`];
+const rootElements = [`"speed"`, `"priority"`, `"distance_influence"`, `"areas"`, `"turn_penalty"`, `"parameters"`];
 const statementElements = [`"if"`, `"else_if"`, `"else"`, `"limit_to"`, `"multiply_by"`];
 
 describe('complete_json', () => {
@@ -46,6 +46,18 @@ describe('complete_json', () => {
         test_complete(`{"distance_influence": "x`, 23, [`__hint__type a number`], [23, 25]);
         test_complete(`{"distance_influence": "x", "speed": []`, 23, [`__hint__type a number`], [23, 26]);
         test_complete(`{"distance_influence": 123, "speed": []`, 23, [`__hint__type a number`], [23, 26]);
+        test_complete(`{"parameters": {"x"`, 17, [`__hint__type a parameter name`], [16, 19]);
+        test_complete(`{"parameters": {"max_weight": 5`, 30, [`__hint__type a number or boolean`], [30, 31]);
+    });
+
+    test(`parameters, known`, () => {
+        const known = {weight: {value: 5, min: 0, max: 40}, height: {value: 3.5}, avoid_hills: {value: false}};
+        test_complete_known(`{"parameters": {"weight": 5, "x"`, 30, known, [`"height"`, `"avoid_hills"`], [29, 32]);
+        test_complete_known(`{"parameters": {"weight": 5`, 26, known, [`5`, `__hint__type a number within [0, 40]`], [26, 27]);
+        test_complete_known(`{"parameters": {"height": 5`, 26, known, [`3.5`, `__hint__type a number >= 0`], [26, 27]);
+        test_complete_known(`{"parameters": {"avoid_hills": 5`, 31, known, [`true`, `false`], [31, 32]);
+        test_complete_known(`{"parameters": `, 15, known, [` {\n    "weight": 5,\n    "height": 3.5,\n    "avoid_hills": false\n  }`], [14, 16]);
+        test_complete_known(`{"parameters": {"x"`, 17, {}, [`__hint__no parameters can be overridden for this profile`], [16, 19]);
     });
 
     test(`areas`, () => {
@@ -77,6 +89,17 @@ function test_complete(content, pos, suggestions, range) {
         expect(result.range).toStrictEqual(range);
     } catch (e) {
         Error.captureStackTrace(e, test_complete);
+        throw e;
+    }
+}
+
+function test_complete_known(content, pos, knownParameters, suggestions, range) {
+    const result = completeJson(content, pos, knownParameters);
+    try {
+        expect(result.suggestions).toStrictEqual(suggestions);
+        expect(result.range).toStrictEqual(range);
+    } catch (e) {
+        Error.captureStackTrace(e, test_complete_known);
         throw e;
     }
 }
