@@ -11,7 +11,7 @@ export function completeJson(content, pos) {
     if (
         /^root-object(-property|-property-key)?$/.test(signatureString)
     ) {
-        let suggestions = ['"speed"', '"priority"', '"distance_influence"', '"areas"']
+        let suggestions = ['"speed"', '"priority"', '"distance_influence"', '"areas"', '"turn_penalty"']
             .filter(s => !keyAlreadyExistsInOtherPairs(jsonPath.path[0].children, jsonPath.path[1], s));
         return {
             suggestions,
@@ -25,10 +25,13 @@ export function completeJson(content, pos) {
             range: jsonPath.tokenRange
         }
     } else if (
-        /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object(-property|-property-key)?$/.test(signatureString)
+        /^root-object-property\[(speed|priority|turn_penalty)]-array\[[0-9]+]-object(-property|-property-key)?$/.test(signatureString)
     ) {
         const clauses = ['"if"', '"else_if"', '"else"'];
-        const operators = ['"limit_to"', '"multiply_by"'];
+        // 'add' is only allowed for turn_penalty, while speed and priority use 'limit_to' and 'multiply_by'
+        const operators = jsonPath.signature[2] === 'property[turn_penalty]'
+            ? ['"add"']
+            : ['"limit_to"', '"multiply_by"'];
         const hasClause = jsonPath.signature.length > 4 && keysAlreadyExistInOtherPairs(jsonPath.path[3].children, jsonPath.path[4], clauses);
         const hasOperator = jsonPath.signature.length > 4 && keysAlreadyExistInOtherPairs(jsonPath.path[3].children, jsonPath.path[4], operators);
         let suggestions = [];
@@ -41,21 +44,21 @@ export function completeJson(content, pos) {
             range: jsonPath.signature[jsonPath.signature.length - 1] === 'key' ? jsonPath.tokenRange : [pos, pos + 1]
         }
     } else if (
-        /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object-property\[(else)]-value$/.test(signatureString)
+        /^root-object-property\[(speed|priority|turn_penalty)]-array\[[0-9]+]-object-property\[(else)]-value$/.test(signatureString)
     ) {
         return {
             suggestions: ['""'],
             range: [pos, pos + 2]
         }
     } else if (
-        /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object-property\[(if|else_if)]-value$/.test(signatureString)
+        /^root-object-property\[(speed|priority|turn_penalty)]-array\[[0-9]+]-object-property\[(if|else_if)]-value$/.test(signatureString)
     ) {
         return {
             suggestions: ['__hint__type a condition'],
             range: jsonPath.tokenRange
         }
     } else if (
-        /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object-property\[(limit_to|multiply_by)]-value$/.test(signatureString)
+        /^root-object-property\[(speed|priority)]-array\[[0-9]+]-object-property\[(limit_to|multiply_by)]-value$|^root-object-property\[turn_penalty]-array\[[0-9]+]-object-property\[add]-value$/.test(signatureString)
     ) {
         return {
             suggestions: ['__hint__type an expression'],
