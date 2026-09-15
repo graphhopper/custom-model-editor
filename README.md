@@ -1,3 +1,17 @@
+# usage
+
+```js
+import {create} from 'custom-model-editor/src/index';
+
+// the categories are the encoded values, see demo/index.html for the format
+const editor = create(categories, element => document.body.appendChild(element));
+
+// optional: the parameters of the current profile as returned by GraphHopper's /info endpoint, e.g.
+// {vehicle_height: {value: 4, min: 0}, avoid_toll: {value: false}}. this enables validation and completion of the
+// 'parameters' section. use {} for a profile without parameters.
+editor.parameters = profile.parameters || {};
+```
+
 # development
 
 ```shell

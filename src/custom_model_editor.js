@@ -16,6 +16,7 @@ class CustomModelEditor {
     cm;
     _categories = {};
     _numericCategories = [];
+    _parameters = null;
     _validListener;
 
     /**
@@ -62,6 +63,26 @@ class CustomModelEditor {
                 this._numericCategories.push(k);
             }
         });
+        this._lint();
+    }
+
+    /**
+     * Sets the parameters of the server-side custom model of the current profile, like the 'parameters' field of a
+     * profile returned by GraphHopper's /info endpoint, e.g. {vehicle_height: {value: 4, min: 0}, avoid_toll: {value: false}}.
+     * Use {} for a profile without parameters and null if they are unknown (any parameter name is accepted then).
+     */
+    set parameters(parameters) {
+        this._parameters = parameters === undefined ? null : parameters;
+        this._lint();
+    }
+
+    get parameters() {
+        return this._parameters;
+    }
+
+    _lint = () => {
+        if (this.cm && typeof this.cm.performLint === 'function')
+            this.cm.performLint();
     }
 
     set value(value) {
@@ -105,7 +126,7 @@ class CustomModelEditor {
      * Builds a list of errors for the current text such that they can be visualized in the editor.
      */
     getCurrentErrors = (text, editor) => {
-        const validateResult = validateJson(text);
+        const validateResult = validateJson(text, this._parameters);
         const errors = validateResult.errors.map((err, i) => {
             return {
                 message: err.path + ': ' + err.message,
@@ -188,9 +209,9 @@ class CustomModelEditor {
     }
 
     showAutoCompleteSuggestions = () => {
-        const validateResult = validateJson(this.cm.getValue());
+        const validateResult = validateJson(this.cm.getValue(), this._parameters);
         const cursor = this.cm.indexFromPos(this.cm.getCursor());
-        const completeRes = completeJson(this.cm.getValue(), cursor);
+        const completeRes = completeJson(this.cm.getValue(), cursor, this._parameters);
         if (completeRes.suggestions.length > 0) {
             if (completeRes.suggestions.length === 1 && completeRes.suggestions[0] === `__hint__type a condition`) {
                 this._completeExpression(completeRes, cursor, (expression, pos) => completeCondition(expression, pos, this._categories, validateResult.areas));
