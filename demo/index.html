@@ -34,8 +34,16 @@
         document.querySelector("#custom_model_editor_box").appendChild(element);
     });
     editor.categories = categories;
+    // the parameters of the current profile as returned by GraphHopper's /info endpoint
+    editor.parameters = {
+        "vehicle_width": {value: 3, min: 0},
+        "vehicle_height": {value: 4, min: 0},
+        "vehicle_weight": {value: 18, min: 0},
+        "vehicle_max_speed": {value: 95, min: 10, max: 140},
+        "avoid_toll": {value: false}
+    };
     editor.setExtraKey('Ctrl-Enter', () => {editor.value = (editor.value + '\n You pressed Ctrl-Enter')});
-    editor.value = '{\n  "speed": [\n    {\n      "if": "max_speed > 10",\n      "limit_to": "600"\n    }\n  ]\n}';
+    editor.value = '{\n  "parameters": {\n    "vehicle_height": 3.5,\n    "avoid_toll": true\n  },\n  "speed": [\n    {\n      "if": "max_speed > 10",\n      "limit_to": "600"\n    }\n  ]\n}';
     editor.cm.focus();
     editor.cm.setCursor(editor.cm.lineCount())
     const button = document.querySelector("#send-button")
