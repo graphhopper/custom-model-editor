@@ -1,6 +1,6 @@
 {
   "name": "@graphhopper/custom-model-editor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Interactive text editor for GraphHopper's custom model",
   "main": "dist/index.js",
   "files": [
