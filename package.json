@@ -1,15 +1,25 @@
 {
-  "name": "custom-model-editor",
+  "name": "@graphhopper/custom-model-editor",
   "version": "0.0.1",
   "description": "Interactive text editor for GraphHopper's custom model",
-  "main": "src/index.js",
-  "private": "true",
+  "main": "dist/index.js",
+  "files": [
+    "dist/"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/graphhopper/custom-model-editor.git"
+  },
   "scripts": {
     "watch": "webpack --watch --mode development",
     "build-dev": "webpack --mode development",
     "build": "webpack --mode production",
     "test": "jest",
-    "test-watch": "jest --watchAll"
+    "test-watch": "jest --watchAll",
+    "prepublishOnly": "npm test && npm run build"
   },
   "keywords": [],
   "author": "GraphHopper",
@@ -17,6 +27,7 @@
   "devDependencies": {
     "@types/jest": "^29.4.0",
     "jest": "^29.4.1",
+    "jsonc-parser": "^3.2.0",
     "ts-jest": "^29.0.5",
     "ts-loader": "^9.4.2",
     "typescript": "^4.9.5",
@@ -24,7 +35,6 @@
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
-    "codemirror": "^5.65.11",
-    "jsonc-parser": "^3.2.0"
+    "codemirror": "^5.65.11"
   }
 }
